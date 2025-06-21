@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import AuthProvider from '@/components/AuthProvider'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
@@ -35,9 +36,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="min-h-screen">
-          {children}
-        </div>
+        <AuthProvider>
+          <div className="min-h-screen">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   )
