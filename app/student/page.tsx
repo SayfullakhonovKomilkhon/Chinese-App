@@ -17,7 +17,9 @@ import {
   Award,
   BarChart3,
   Calendar,
-  Zap
+  Zap,
+  User,
+  Settings
 } from 'lucide-react'
 
 // Import new components and API
@@ -283,12 +285,25 @@ export default function StudentDashboard() {
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-8">
-        {/* Header */}
+        {/* Header with Profile Button */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="relative text-center mb-12"
         >
+          {/* Profile Button - Top Right */}
+          <motion.button
+            onClick={() => router.push('/profile')}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="absolute top-0 right-0 flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2 text-white hover:bg-white/20 transition-all duration-200"
+          >
+            <User className="w-5 h-5" />
+            <span className="hidden sm:inline">Профиль</span>
+          </motion.button>
+
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Панель ученика
           </h1>
