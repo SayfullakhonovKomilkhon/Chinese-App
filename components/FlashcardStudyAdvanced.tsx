@@ -92,15 +92,29 @@ export default function FlashcardStudyAdvanced({
   const handleDifficultyRating = async (difficulty: 'easy' | 'hard' | 'forgot') => {
     if (!currentWord || !sessionId || isAnimating) return
     
+    console.log('🔥 Button clicked:', difficulty, {
+      currentWord: currentWord.id,
+      sessionId,
+      isAnimating
+    })
+    
     setIsAnimating(true)
     
     try {
-      // Submit response to backend
-      await submitWordResponse({
+      console.log('📤 Submitting word response...', {
         word_id: currentWord.id,
         difficulty_rating: difficulty,
         session_id: sessionId
       })
+      
+      // Submit response to backend
+      const response = await submitWordResponse({
+        word_id: currentWord.id,
+        difficulty_rating: difficulty,
+        session_id: sessionId
+      })
+      
+      console.log('✅ Response submitted successfully:', response)
       
       // If user finds it easy, mark as learned immediately for better UX
       if (difficulty === 'easy') {
@@ -126,6 +140,8 @@ export default function FlashcardStudyAdvanced({
         accuracy: sessionStats.totalAnswers >= 0 ? 
           ((wasCorrect ? sessionStats.correctAnswers + 1 : sessionStats.correctAnswers) / (sessionStats.totalAnswers + 1)) * 100 : 0
       }
+      
+      console.log('📊 Updated stats:', updatedStats)
       
       // Update session statistics state
       setSessionStats(updatedStats)
@@ -157,7 +173,9 @@ export default function FlashcardStudyAdvanced({
       }
       
     } catch (error) {
-      console.error('Error submitting word response:', error)
+      console.error('❌ Error submitting word response:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Не удалось отправить ответ'
+      alert(`Ошибка: ${errorMessage}`)
       setIsAnimating(false)
     }
   }

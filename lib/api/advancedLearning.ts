@@ -93,8 +93,15 @@ export async function submitWordResponse(
   input: ProgressUpdateInput
 ): Promise<UserWordProgress> {
   try {
+    console.log('🔍 submitWordResponse called with:', input)
+    
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
+    if (!user) {
+      console.error('❌ User not authenticated')
+      throw new Error('User not authenticated')
+    }
+    
+    console.log('👤 User authenticated:', user.id)
 
     const { data, error } = await supabase.rpc('submit_word_response', {
       p_user_uuid: user.id,
@@ -105,11 +112,17 @@ export async function submitWordResponse(
       p_session_id: input.session_id || null
     })
 
-    if (error) throw error
+    console.log('🔄 Supabase RPC response:', { data, error })
 
+    if (error) {
+      console.error('❌ Supabase RPC error:', error)
+      throw error
+    }
+
+    console.log('✅ submitWordResponse successful:', data)
     return data
   } catch (error) {
-    console.error('Error submitting word response:', error)
+    console.error('❌ Error in submitWordResponse:', error)
     throw error
   }
 }
