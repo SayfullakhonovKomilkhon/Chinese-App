@@ -2,30 +2,30 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
   BookOpen, 
   ArrowRight, 
-  Loader2, 
   RefreshCw, 
-  Sparkles, 
   GraduationCap, 
   TrendingUp,
   Clock,
   Target,
-  Flame,
   Award,
   BarChart3,
   Calendar,
-  Zap,
   User,
-  Settings
+  Settings,
+  Play,
+  CheckCircle2,
+  Trophy,
+  AlertCircle,
+  LogOut
 } from 'lucide-react'
 
-// Import new components and API
-import StatCard from '@/components/StatCard'
-import ProgressBar from '@/components/ProgressBar'
-import LearningStatusBadge from '@/components/LearningStatusBadge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { useAuthGuard } from '@/lib/useAuthGuard'
+import { signOut } from '@/lib/authUtils'
 import { 
   getUserDashboard, 
   getCategoriesWithProgress, 
@@ -40,49 +40,82 @@ export default function StudentDashboard() {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
   const [categories, setCategories] = useState<CategorySummary[]>([])
   const [wordsDueToday, setWordsDueToday] = useState<number>(0)
-  const [loading, setLoading] = useState(true)
-  const [statsLoading, setStatsLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  
+  // Use auth guard with student role requirement and session persistence
+  const { user, loading: authLoading, isAuthenticated, hasRequiredRole } = useAuthGuard({
+    requireRole: 'student',
+    requireEmailVerification: true,
+    redirectPath: '/'
+  })
 
   const loadDashboardData = async () => {
+    if (!user) return
+    
     try {
-      setLoading(true)
+      console.log('StudentDashboard: Loading dashboard data...')
+      setDataLoading(true)
       setError(null)
       
-      // Load all dashboard data in parallel
-      const [dashboard, categoriesData, wordsdue] = await Promise.all([
+      // Load all dashboard data in parallel with timeout
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Dashboard data loading timeout')), 10000)
+      })
+      
+      const dataPromise = Promise.all([
         getUserDashboard().catch(() => null),
         getCategoriesWithProgress().catch(() => []),
         getWordsDueToday().catch(() => 0)
       ])
       
+      const [dashboard, categoriesData, wordsdue] = await Promise.race([dataPromise, timeoutPromise]) as any
+      
+      console.log('StudentDashboard: Dashboard data loaded successfully')
       setDashboardStats(dashboard)
       setCategories(categoriesData)
       setWordsDueToday(wordsdue)
       
-    } catch (err) {
-      console.error('Error loading dashboard:', err)
+    } catch (err: any) {
+      console.error('StudentDashboard: Error loading dashboard:', err)
       setError('Ошибка загрузки данных дашборда')
     } finally {
-      setLoading(false)
-      setStatsLoading(false)
+      setDataLoading(false)
     }
   }
 
   useEffect(() => {
-    loadDashboardData()
-  }, [])
+    if (isAuthenticated && hasRequiredRole && user) {
+      loadDashboardData()
+    }
+  }, [isAuthenticated, hasRequiredRole, user])
 
   const handleStartLearning = (categoryId: number, categoryName: string) => {
+    console.log('StudentDashboard: Starting learning for category:', categoryName)
     router.push(`/study/${encodeURIComponent(categoryName)}?categoryId=${categoryId}`)
   }
 
-  const getProgressColor = (percentage: number): 'blue' | 'green' | 'purple' | 'orange' => {
-    if (percentage >= 90) return 'purple'
-    if (percentage >= 70) return 'green'
-    if (percentage >= 40) return 'orange'
-    return 'blue'
+  const handleSettings = () => {
+    console.log('StudentDashboard: Navigating to settings/profile page')
+    router.push('/profile')
+  }
+
+  const handleSignOut = async () => {
+    try {
+      console.log('StudentDashboard: Signing out user')
+      await signOut()
+      router.push('/')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
+
+  const getProgressColor = (percentage: number) => {
+    if (percentage >= 90) return 'bg-purple-500'
+    if (percentage >= 70) return 'bg-emerald-500'
+    if (percentage >= 40) return 'bg-amber-500'
+    return 'bg-blue-500'
   }
 
   const getCategoryStatusText = (status: string) => {
@@ -95,12 +128,23 @@ export default function StudentDashboard() {
     }
   }
 
-  // Sort categories: In Progress first, then Not Started, then Completed/Mastered at bottom
+  const getCategoryStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': 
+      case 'mastered': 
+        return 'text-emerald-700 bg-emerald-100'
+      case 'in_progress': 
+        return 'text-blue-700 bg-blue-100'
+      default: 
+        return 'text-slate-700 bg-slate-100'
+    }
+  }
+
+  // Sort categories: In Progress first, then Not Started, then Completed/Mastered
   const sortedCategories = [...categories].sort((a, b) => {
     const aStatus = a.progress?.status || 'not_started'
     const bStatus = b.progress?.status || 'not_started'
     
-    // Priority order: in_progress -> not_started -> completed -> mastered
     const statusPriority = {
       'in_progress': 1,
       'not_started': 2,
@@ -115,529 +159,246 @@ export default function StudentDashboard() {
       return aPriority - bPriority
     }
     
-    // If same status, sort by difficulty level
     return a.difficulty_level - b.difficulty_level
   })
 
-  const getCategoryGradient = (status: string, percentage: number) => {
-    switch (status) {
-      case 'completed': 
-      case 'mastered': 
-        return 'from-emerald-500/20 via-green-600/15 to-teal-500/20'
-      case 'in_progress': 
-        if (percentage >= 70) return 'from-amber-500/20 via-orange-600/15 to-yellow-500/20'
-        return 'from-blue-500/20 via-indigo-600/15 to-purple-500/20'
-      default: 
-        return 'from-slate-500/20 via-gray-600/15 to-slate-500/20'
-    }
-  }
-
-  const getCategoryBorderColor = (status: string) => {
-    switch (status) {
-      case 'completed': 
-      case 'mastered': 
-        return 'border-emerald-400/30'
-      case 'in_progress': 
-        return 'border-blue-400/30'
-      default: 
-        return 'border-white/20'
-    }
-  }
-
-  if (loading) {
+  // Show loading while authenticating
+  if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            animate={{
-              rotate: 360,
-              scale: [1, 1.1, 1],
-            }}
-            transition={{
-              rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-              scale: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-            }}
-            className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-cyan-400/20 to-blue-600/20 rounded-full blur-3xl"
-          />
-          <motion.div
-            animate={{
-              rotate: -360,
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              rotate: { duration: 25, repeat: Infinity, ease: "linear" },
-              scale: { duration: 10, repeat: Infinity, ease: "easeInOut" },
-            }}
-            className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl"
-          />
-        </div>
-
-        <div className="relative z-10 flex items-center justify-center min-h-screen">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center"
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="inline-block mb-6"
-            >
-              <Loader2 className="w-16 h-16 text-cyan-400" />
-            </motion.div>
-            <h2 className="text-3xl font-bold text-white mb-2">Загрузка дашборда...</h2>
-            <p className="text-cyan-300 text-lg">Подготавливаем ваши данные для изучения</p>
-          </motion.div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 mx-auto">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-blue-600"></div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-slate-900">Проверка доступа</h2>
+            <p className="text-slate-600">Загрузка панели студента...</p>
+          </div>
         </div>
       </div>
     )
   }
 
+  // Don't render anything if not authenticated or doesn't have required role
+  if (!isAuthenticated || !hasRequiredRole || !user) {
+    return null
+  }
+
+  // Show loading while fetching dashboard data
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 mx-auto">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-blue-600"></div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-slate-900">Загрузка данных</h2>
+            <p className="text-slate-600">Подготовка вашего дашборда...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            animate={{
-              rotate: 360,
-              scale: [1, 1.1, 1],
-            }}
-            transition={{
-              rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-              scale: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-            }}
-            className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-cyan-400/20 to-blue-600/20 rounded-full blur-3xl"
-          />
-          <motion.div
-            animate={{
-              rotate: -360,
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              rotate: { duration: 25, repeat: Infinity, ease: "linear" },
-              scale: { duration: 10, repeat: Infinity, ease: "easeInOut" },
-            }}
-            className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl"
-          />
-        </div>
-
-        <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center max-w-md"
-          >
-            <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-8">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-16 h-16 bg-gradient-to-br from-red-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6"
-              >
-                <RefreshCw className="w-8 h-8 text-white" />
-              </motion.div>
-              
-              <h2 className="text-2xl font-bold text-white mb-4">Ошибка загрузки</h2>
-              <p className="text-cyan-300 mb-6">{error}</p>
-              
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(239, 68, 68, 0.4)" }}
-                whileTap={{ scale: 0.95 }}
-                onClick={loadDashboardData}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-400 hover:to-pink-500 text-white font-bold py-3 px-6 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-red-500/25 backdrop-blur-sm border border-red-400/30"
-              >
-                <RefreshCw className="w-5 h-5" />
-                Попробовать снова
-              </motion.button>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
-          </motion.div>
-        </div>
+            <h2 className="text-xl font-bold text-slate-900 mb-3">Ошибка загрузки</h2>
+            <p className="text-slate-600 mb-6">{error}</p>
+            <Button onClick={loadDashboardData} className="w-full">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Попробовать снова
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          animate={{
-            rotate: 360,
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-            scale: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-          }}
-          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-cyan-400/20 to-blue-600/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            rotate: -360,
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            rotate: { duration: 25, repeat: Infinity, ease: "linear" },
-            scale: { duration: 10, repeat: Infinity, ease: "easeInOut" },
-          }}
-          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl"
-        />
-      </div>
-
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        {/* Header with Profile Button */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative text-center mb-12"
-        >
-          {/* Profile Button - Top Right */}
-          <motion.button
-            onClick={() => router.push('/profile')}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="absolute top-0 right-0 flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2 text-white hover:bg-white/20 transition-all duration-200"
-          >
-            <User className="w-5 h-5" />
-            <span className="hidden sm:inline">Профиль</span>
-          </motion.button>
-
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Панель ученика
-          </h1>
-          <p className="text-cyan-300 text-lg mb-6">
-            Добро пожаловать в ваше путешествие изучения китайского языка
-          </p>
-          
-          {/* Quick Stats Bar */}
-          <div className="flex justify-center gap-6 text-sm">
-            <div className="flex items-center gap-2 text-white/80">
-              <Target className="w-4 h-4 text-cyan-400" />
-              <span>Слов к изучению сегодня: {wordsDueToday}</span>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <GraduationCap className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-slate-900">Панель студента</h1>
+                <p className="text-sm text-slate-600">Добро пожаловать, {user.full_name || user.email.split('@')[0]}</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-white/80">
-              <Flame className="w-4 h-4 text-orange-400" />
-              <span>Серия: {dashboardStats?.user_statistics?.current_streak_days || 0} дней</span>
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="sm" onClick={handleSettings}>
+                <Settings className="w-4 h-4 mr-2" />
+                Настройки
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Выйти
+              </Button>
             </div>
-             </div>
-        </motion.div>
+          </div>
+        </div>
+      </header>
 
-        {/* Comprehensive Statistics Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12"
-        >
-          {/* Learning Progress Row */}
-          <StatCard
-            title="Изучено сегодня"
-            value={dashboardStats?.user_statistics?.words_learned_today || 0}
-            subtitle="слов"
-            icon={BookOpen}
-            gradient="from-blue-500 to-cyan-500"
-            loading={statsLoading}
-            delay={0}
-          />
-          
-          <StatCard
-            title="Всего изучено"
-            value={dashboardStats?.user_statistics?.total_words_learned || 0}
-            subtitle="слов"
-            icon={GraduationCap}
-            gradient="from-green-500 to-emerald-500"
-            loading={statsLoading}
-            delay={1}
-          />
-          
-          <StatCard
-            title="Освоено"
-            value={dashboardStats?.user_statistics?.total_words_mastered || 0}
-            subtitle="слов"
-            icon={Award}
-            gradient="from-purple-500 to-violet-500"
-            loading={statsLoading}
-            delay={2}
-          />
-          
-          <StatCard
-            title="Точность"
-            value={`${Math.round(dashboardStats?.user_statistics?.overall_accuracy || 0)}%`}
-            subtitle="правильных ответов"
-            icon={Target}
-            gradient="from-orange-500 to-yellow-500"
-            loading={statsLoading}
-            delay={3}
-          />
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Всего слов</p>
+                                     <p className="text-2xl font-bold text-slate-900">
+                     {dashboardStats?.user_statistics?.total_words_learned || 0}
+                   </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Study Activity Row */}
-          <StatCard
-            title="Текущая серия"
-            value={dashboardStats?.user_statistics?.current_streak_days || 0}
-            subtitle="дней подряд"
-            icon={Flame}
-            gradient="from-red-500 to-pink-500"
-            loading={statsLoading}
-            delay={4}
-          />
-          
-          <StatCard
-            title="Лучшая серия"
-            value={dashboardStats?.user_statistics?.longest_streak_days || 0}
-            subtitle="дней"
-            icon={TrendingUp}
-            gradient="from-indigo-500 to-purple-500"
-            loading={statsLoading}
-            delay={5}
-          />
-          
-          <StatCard
-            title="Время изучения"
-            value={Math.round((dashboardStats?.user_statistics?.total_study_minutes || 0) / 60)}
-            subtitle="часов всего"
-            icon={Clock}
-            gradient="from-teal-500 to-cyan-500"
-            loading={statsLoading}
-            delay={6}
-          />
-          
-          <StatCard
-            title="Сессий"
-            value={dashboardStats?.user_statistics?.total_sessions || 0}
-            subtitle="занятий"
-            icon={BarChart3}
-            gradient="from-violet-500 to-purple-500"
-            loading={statsLoading}
-            delay={7}
-          />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Изучено</p>
+                                     <p className="text-2xl font-bold text-slate-900">
+                     {dashboardStats?.user_statistics?.total_words_learned || 0}
+                   </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Category Progress Row */}
-          <StatCard
-            title="Завершено"
-            value={dashboardStats?.user_statistics?.categories_completed || 0}
-            subtitle="категорий"
-            icon={Sparkles}
-            gradient="from-emerald-500 to-green-500"
-            loading={statsLoading}
-            delay={8}
-          />
-          
-          <StatCard
-            title="В процессе"
-            value={dashboardStats?.categories_in_progress || 0}
-            subtitle="категорий"
-            icon={Zap}
-            gradient="from-yellow-500 to-orange-500"
-            loading={statsLoading}
-            delay={9}
-          />
-          
-          <StatCard
-            title="Активных дней"
-            value={dashboardStats?.user_statistics?.total_active_days || 0}
-            subtitle="дней изучения"
-            icon={Calendar}
-            gradient="from-pink-500 to-rose-500"
-            loading={statsLoading}
-            delay={10}
-          />
-          
-          <StatCard
-            title="Сегодня"
-            value={`${Math.round(dashboardStats?.user_statistics?.minutes_studied_today || 0)} мин`}
-            subtitle="времени изучения"
-            icon={Clock}
-            gradient="from-cyan-500 to-blue-500"
-            loading={statsLoading}
-            delay={11}
-          />
-        </motion.div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <Clock className="h-6 w-6 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">На сегодня</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {wordsDueToday}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Trophy className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Прогресс</p>
+                                     <p className="text-2xl font-bold text-slate-900">
+                     {Math.round(dashboardStats?.user_statistics?.overall_accuracy || 0)}%
+                   </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Categories Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl md:text-3xl font-bold text-white">
-            Категории для изучения
-          </h2>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              onClick={loadDashboardData}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all duration-300 backdrop-blur-sm border border-white/20"
-              >
-              <RefreshCw className="w-4 h-4" />
-                Обновить
-              </motion.button>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Категории для изучения</h2>
+              <p className="text-slate-600">Выберите категорию для продолжения обучения</p>
+            </div>
+            <Button variant="outline" onClick={loadDashboardData}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Обновить
+            </Button>
           </div>
 
-          {categories.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen className="w-16 h-16 text-white/40 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Нет доступных категорий</h3>
-              <p className="text-white/60">Категории будут загружены автоматически</p>
-            </div>
+          {sortedCategories.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-8 h-8 text-slate-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Нет доступных категорий</h3>
+                <p className="text-slate-600">Категории для изучения появятся здесь после настройки курса.</p>
+              </CardContent>
+            </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedCategories.map((category, index) => {
-                const status = category.progress?.status || 'not_started'
-                const percentage = category.progress?.completion_percentage || 0
-                const isCompleted = status === 'completed' || status === 'mastered'
+              {sortedCategories.map((category) => {
+                const progress = category.progress
+                                 const percentage = progress?.completion_percentage || 0
+                const status = progress?.status || 'not_started'
                 
                 return (
-          <motion.div
-                    key={category.id}
-                   initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ delay: 0.1 * index, duration: 0.5 }}
-                    whileHover={{ 
-                      scale: 1.02, 
-                      y: -8,
-                      boxShadow: isCompleted 
-                        ? "0 25px 50px rgba(16, 185, 129, 0.15), 0 0 0 1px rgba(16, 185, 129, 0.1)" 
-                        : "0 25px 50px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.1)"
-                    }}
-                    className={`relative bg-gradient-to-br ${getCategoryGradient(status, percentage)} backdrop-blur-xl rounded-2xl border ${getCategoryBorderColor(status)} shadow-2xl p-6 cursor-pointer group overflow-hidden ${isCompleted ? 'opacity-75' : ''}`}
-                    onClick={() => handleStartLearning(category.id, category.name_russian)}
-                  >
-                    {/* Completion Badge for Completed Categories */}
-                    {isCompleted && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="absolute top-3 right-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg"
-                      >
-                        <Award className="w-3 h-3" />
-                        {status === 'mastered' ? 'Освоено' : 'Завершено'}
-                      </motion.div>
-                    )}
-
-                    {/* Category Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1 pr-2">
-                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors duration-300">
-                          {category.name_russian}
-                        </h3>
-                        <p className="text-white/70 text-sm mb-3 leading-relaxed">
-                          {category.description_russian}
-                        </p>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg">
-                            <GraduationCap className="w-3 h-3 text-cyan-400" />
-                            <span className="text-xs text-white/80 font-medium">
-                              Уровень {category.difficulty_level}
-                            </span>
-                          </div>
-                          {category.progress && (
-                            <LearningStatusBadge 
-                              status={category.progress.status === 'not_started' ? 'new' : 
-                                     category.progress.status === 'in_progress' ? 'learning' :
-                                     category.progress.status === 'completed' ? 'learned' : 'mastered'}
-                              size="sm"
-                              animated={true}
-                            />
-                          )}
-                        </div>
-                      </div>
-                      
-                       <motion.div
-                        className="opacity-60 group-hover:opacity-100 transition-all duration-300"
-                        whileHover={{ x: 5, scale: 1.1 }}
-                       >
-                        <div className="bg-white/10 p-2 rounded-full">
-                          <ArrowRight className="w-5 h-5 text-cyan-400" />
-                        </div>
-                       </motion.div>
-                    </div>
-
-                    {/* Enhanced Progress Section */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center text-sm text-white/90 mb-3">
-                        <span className="font-medium">
-                          {category.progress?.words_learned || 0} из {category.progress?.total_words || category.total_words} слов
-                        </span>
-                        <span className="bg-white/10 px-2 py-1 rounded-lg font-bold">
-                          {Math.round(percentage)}%
-                        </span>
-                      </div>
-                      
-                      {/* Premium Progress Bar */}
-                      <div className="relative">
-                        <div className="w-full bg-white/10 rounded-full h-3 backdrop-blur-sm border border-white/20">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${percentage}%` }}
-                            transition={{ duration: 1, delay: 0.2 * index }}
-                            className={`h-full rounded-full bg-gradient-to-r ${
-                              isCompleted 
-                                ? 'from-emerald-400 via-green-500 to-teal-400' 
-                                : percentage >= 70 
-                                  ? 'from-amber-400 via-orange-500 to-yellow-400'
-                                  : 'from-blue-400 via-indigo-500 to-purple-400'
-                            } shadow-lg relative overflow-hidden`}
-                          >
-                         <motion.div
-                              animate={{ x: ['-100%', '100%'] }}
-                           transition={{ 
-                             duration: 2, 
-                             repeat: Infinity, 
-                                ease: 'linear',
-                                repeatDelay: 1 
-                              }}
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                            />
-                          </motion.div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Enhanced Category Stats */}
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-1 text-xs text-white/60">
-                        <BookOpen className="w-3 h-3" />
-                        <span>{category.total_words} слов</span>
-                      </div>
-                      {category.progress?.last_studied_at && (
-                        <div className="flex items-center gap-1 text-xs text-white/60">
-                          <Clock className="w-3 h-3" />
-                          <span>
-                            {new Date(category.progress.last_studied_at).toLocaleDateString('ru-RU')}
+                  <Card key={category.id} className="hover:shadow-md cursor-pointer group" onClick={() => handleStartLearning(category.id, category.name_russian)}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-blue-600">
+                            {category.name_russian}
+                          </h3>
+                          <p className="text-sm text-slate-600 mb-3">
+                            {category.description_russian || 'Изучение китайского языка'}
+                          </p>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryStatusColor(status)}`}>
+                            {getCategoryStatusText(status)}
                           </span>
                         </div>
-                      )}
-                    </div>
-
-                    {/* Premium Hover Effects */}
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-all duration-500"
-                    />
-                    
-                    {/* Shimmer effect for completed categories */}
-                    {isCompleted && (
-                           <motion.div
-                        animate={{ x: ['-100%', '100%'] }}
-                             transition={{ 
-                          duration: 3, 
-                               repeat: Infinity,
-                          ease: 'linear',
-                          repeatDelay: 2 
-                             }}
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/10 to-transparent"
-                      />
-                    )}
-                           </motion.div>
+                        <div className="p-2 bg-slate-100 rounded-lg ml-4">
+                          <BookOpen className="h-5 w-5 text-slate-600" />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-600">Прогресс</span>
+                          <span className="font-semibold text-slate-900">{percentage}%</span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${getProgressColor(percentage)}`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-slate-500">
+                          <span>Уровень {category.difficulty_level}</span>
+                                                     <span>{progress?.words_learned || 0} слов изучено</span>
+                        </div>
+                      </div>
+                      
+                      <Button className="w-full mt-4" variant="outline">
+                        <Play className="w-4 h-4 mr-2" />
+                        {status === 'not_started' ? 'Начать изучение' : 'Продолжить'}
+                      </Button>
+                    </CardContent>
+                  </Card>
                 )
               })}
-                     </div>
+            </div>
           )}
-          </motion.div>
-      </div>
+        </div>
+      </main>
     </div>
   )
 } 

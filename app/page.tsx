@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { BookOpen, Brain, Volume2, Star, ArrowRight, ChevronRight, Mail, AlertCircle } from 'lucide-react'
+import { BookOpen, Brain, Volume2, Star, ArrowRight, ChevronRight, Mail, AlertCircle, Sparkles, Trophy, Zap, Target, Users } from 'lucide-react'
 import AuthModal from '@/components/AuthModal'
 import { useAuth } from '@/components/AuthProvider'
 import { getUserDashboardPath } from '@/lib/authUtils'
@@ -17,7 +17,6 @@ function FeedbackForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Mock form submission
     console.log('Feedback submitted:', { email, message })
     setIsSubmitted(true)
     setTimeout(() => {
@@ -28,46 +27,50 @@ function FeedbackForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-lg">Связь с нами</CardTitle>
+    <Card className="w-full max-w-md mx-auto hover:shadow-lg transition-all duration-200">
+      <CardHeader className="text-center">
+        <CardTitle className="text-gradient-primary">Связь с нами</CardTitle>
         <CardDescription>
           Есть вопросы или предложения? Напишите нам!
         </CardDescription>
       </CardHeader>
       <CardContent>
         {isSubmitted ? (
-          <div className="text-center py-4">
-            <div className="text-green-600 font-medium">
-              ✓ Сообщение отправлено!
+          <div className="text-center py-6">
+            <div className="w-16 h-16 mx-auto mb-4 bg-emerald-100 rounded-full flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-emerald-600" />
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
+            <div className="text-emerald-600 font-semibold text-lg mb-2">
+              Сообщение отправлено!
+            </div>
+            <p className="text-slate-600">
               Спасибо за обратную связь
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
+            <div className="form-group">
               <input
                 type="email"
                 placeholder="Ваш email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="form-input"
               />
             </div>
-            <div>
+            <div className="form-group">
               <textarea
                 placeholder="Ваше сообщение..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                rows={4}
+                className="form-input resize-none"
               />
             </div>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" size="lg">
+              <Mail className="w-4 h-4 mr-2" />
               Отправить
             </Button>
           </form>
@@ -80,18 +83,22 @@ function FeedbackForm() {
 // Email verification banner component
 function EmailVerificationBanner() {
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-      <div className="flex items-start space-x-3">
-        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6 mb-8">
+      <div className="flex items-start space-x-4">
+        <div className="p-2 bg-amber-100 rounded-lg">
+          <AlertCircle className="h-6 w-6 text-amber-600" />
+        </div>
         <div className="flex-1">
-          <h3 className="text-sm font-medium text-amber-800">
+          <h3 className="text-lg font-semibold text-amber-900 mb-2">
             Требуется подтверждение email
           </h3>
-          <p className="text-sm text-amber-700 mt-1">
+          <p className="text-amber-800 leading-relaxed">
             Пожалуйста, проверьте вашу почту и перейдите по ссылке для подтверждения email адреса.
           </p>
         </div>
-        <Mail className="h-5 w-5 text-amber-600" />
+        <div className="p-2 bg-amber-100 rounded-lg">
+          <Mail className="h-6 w-6 text-amber-600" />
+        </div>
       </div>
     </div>
   )
@@ -104,22 +111,21 @@ export default function HomePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // Check if user should see email verification message
   const showVerifyMessage = searchParams.get('verify') === 'true'
 
   useEffect(() => {
-    // Redirect authenticated users to their dashboard
-    if (user && user.email_verified) {
+    // Only redirect if we have a user, loading is complete, and email is verified
+    if (!loading && user && user.email_verified) {
+      console.log('Redirecting user to dashboard:', user.role)
       const dashboardPath = getUserDashboardPath(user.role)
       router.push(dashboardPath)
     }
-  }, [user, router])
+  }, [user, loading, router])
 
   const handleDemoAudio = () => {
     if (isPlayingDemo) return
     
     setIsPlayingDemo(true)
-    // Mock audio playback
     setTimeout(() => {
       setIsPlayingDemo(false)
     }, 2000)
@@ -128,14 +134,11 @@ export default function HomePage() {
   const handleStartLearning = () => {
     if (user) {
       if (!user.email_verified) {
-        // User is logged in but email not verified
         return
       }
-      // User is authenticated and verified, redirect to dashboard
       const dashboardPath = getUserDashboardPath(user.role)
       router.push(dashboardPath)
     } else {
-      // User not logged in, show auth modal
       setIsAuthModalOpen(true)
     }
   }
@@ -148,54 +151,66 @@ export default function HomePage() {
     setIsAuthModalOpen(false)
   }
 
-  // Show loading state
+  // Add debugging for authentication flow
+  console.log('HomePage: Rendering with loading =', loading, 'user =', user ? 'present' : 'null')
+  
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600">Загрузка...</p>
+      <div className="page-container flex items-center justify-center">
+        <div className="text-center space-y-8 px-6">
+          <div className="w-20 h-20 mx-auto">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-slate-200 border-t-blue-600"></div>
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-3xl font-bold text-slate-900">Загрузка</h2>
+            <p className="text-lg text-slate-600 font-medium">Подготовка вашего опыта обучения</p>
+            <p className="text-sm text-slate-500">
+              Если загрузка не завершается, попробуйте обновить страницу
+            </p>
+          </div>
         </div>
       </div>
     )
   }
 
-  // If user is authenticated and verified, they should be redirected
-  // This is a fallback in case the useEffect redirect doesn't work immediately
-  if (user && user.email_verified) {
-    return null
+  if (!loading && user && user.email_verified) {
+    return null // Will redirect
   }
   
   return (
-    <div className="min-h-screen">
+    <div className="page-container">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-sm border-b border-gray-200 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200">
+        <div className="content-container">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <BookOpen className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <BookOpen className="h-6 w-6 text-blue-600" />
+              </div>
+              <span className="text-xl font-bold text-slate-900">
                 中文学习
               </span>
             </div>
             <div className="flex items-center space-x-4">
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">
-                    Привет, {user.full_name || user.email.split('@')[0]}!
-                  </span>
-                  {!user.email_verified && (
-                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                      Email не подтвержден
-                    </span>
-                  )}
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-slate-900">
+                      Привет, {user.full_name || user.email.split('@')[0]}!
+                    </p>
+                    {!user.email_verified && (
+                      <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                        Email не подтвержден
+                      </span>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <>
                   <Button variant="ghost" onClick={handleLoginClick}>
                     Войти
                   </Button>
-                  <Button onClick={handleStartLearning}>
+                  <Button onClick={handleStartLearning} className="shadow-md">
                     Начать изучение
                   </Button>
                 </>
@@ -205,274 +220,236 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* Enhanced Hero Section */}
-      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Show email verification banner if needed */}
-        {(showVerifyMessage || (user && !user.email_verified)) && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <EmailVerificationBanner />
-          </div>
-        )}
+      <main className="content-container">
+        {/* Email verification banner */}
+        {showVerifyMessage && <EmailVerificationBanner />}
 
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-32 w-96 h-96 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-32 w-96 h-96 bg-gradient-to-br from-cyan-400 to-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-40 left-1/2 w-64 h-64 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center space-y-12">
+        {/* Hero Section */}
+        <section className="py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-sm text-gray-700 mb-6">
-                <span className="mr-2">✨</span>
-                Эффективное изучение китайского языка
+              <div className="space-y-4">
+                <h1 className="text-4xl lg:text-6xl font-bold text-slate-900 leading-tight">
+                  Изучайте{' '}
+                  <span className="text-gradient-primary">
+                    китайский язык
+                  </span>{' '}
+                  эффективно
+                </h1>
+                <p className="text-xl text-slate-600 leading-relaxed">
+                  Современная платформа для изучения китайского языка с использованием 
+                  научных методов запоминания и интерактивных карточек.
+                </p>
               </div>
               
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
-                <span className="block text-gray-900 mb-2">Изучайте</span>
-                <span className="block text-gradient animate-pulse">
-                  中文
-                </span>
-                <span className="block text-gray-900 mt-2">Эффективно</span>
-              </h1>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  size="lg" 
+                  onClick={handleStartLearning}
+                  className="shadow-md hover:shadow-lg"
+                >
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Начать изучение
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={handleDemoAudio}
+                  disabled={isPlayingDemo}
+                >
+                  <Volume2 className={`w-5 h-5 mr-2 ${isPlayingDemo ? 'animate-pulse' : ''}`} />
+                  {isPlayingDemo ? 'Воспроизведение...' : 'Демо произношения'}
+                </Button>
+              </div>
+
+              <div className="flex items-center space-x-8 pt-4">
+                <div className="flex items-center space-x-2">
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full border-2 border-white" />
+                    ))}
+                  </div>
+                  <span className="text-sm text-slate-600 font-medium">1000+ учеников</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star key={i} className="w-4 h-4 text-amber-400 fill-current" />
+                    ))}
+                  </div>
+                  <span className="text-sm text-slate-600 font-medium">4.9/5</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="relative z-10 bg-white rounded-2xl shadow-strong p-8 border border-slate-200">
+                <div className="text-center space-y-6">
+                  <div className="chinese-text text-6xl font-bold text-slate-900">
+                    你好
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xl font-semibold text-slate-900">Nǐ hǎo</p>
+                    <p className="text-lg text-slate-600">Привет / Здравствуй</p>
+                  </div>
+                  <Button variant="outline" className="w-full">
+                    <Volume2 className="w-4 h-4 mr-2" />
+                    Прослушать
+                  </Button>
+                </div>
+              </div>
               
-              <p className="text-xl sm:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                Интерактивные карточки с реальным произношением, умная система повторений 
-                и персональный трекинг прогресса для быстрого изучения китайского языка
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Button 
-                size="lg" 
-                className="w-full sm:w-auto h-14 px-8 text-lg btn-modern"
-                onClick={handleStartLearning}
-                disabled={user && !user.email_verified}
-              >
-                {user && !user.email_verified ? (
-                  <>
-                    <Mail className="mr-3 h-6 w-6" />
-                    Подтвердите email
-                  </>
-                ) : (
-                  <>
-                    Начать бесплатно
-                    <ArrowRight className="ml-3 h-6 w-6" />
-                  </>
-                )}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="w-full sm:w-auto h-14 px-8 text-lg glass hover:glass-dark transition-all duration-300"
-                onClick={handleDemoAudio}
-                disabled={isPlayingDemo}
-              >
-                {isPlayingDemo ? (
-                  <>
-                    <div className="animate-pulse mr-3">
-                      <Volume2 className="h-6 w-6" />
-                    </div>
-                    Воспроизведение...
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="mr-3 h-6 w-6" />
-                    Демо произношения
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Quick Features Preview */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-5xl mx-auto pt-16">
-              <div className="text-center space-y-4 group">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Brain className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">Умная система</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  ИИ-алгоритм повторений адаптируется под ваш темп
-                </p>
+              {/* Decorative elements */}
+              <div className="absolute -top-6 -right-6 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Brain className="w-6 h-6 text-blue-600" />
               </div>
-              <div className="text-center space-y-4 group">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Volume2 className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">Произношение</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Аудио от носителей языка для каждого слова
-                </p>
-              </div>
-              <div className="text-center space-y-4 group">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Star className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">Прогресс</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Детальная статистика и достижения
-                </p>
+              <div className="absolute -bottom-6 -left-6 w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-emerald-600" />
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto">
+        {/* Features Section */}
+        <section className="py-16">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
               Почему выбирают нас?
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Современные методики обучения, проверенные тысячами студентов по всему миру
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Наша платформа использует современные методы обучения для максимальной эффективности
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                icon: BookOpen,
-                title: "Структурированный курс",
-                description: "От базовых фраз до продвинутого уровня HSK",
-                color: "from-blue-400 to-blue-600"
+                icon: Brain,
+                title: 'Научный подход',
+                description: 'Используем алгоритм интервального повторения для оптимального запоминания',
+                gradient: 'from-purple-500 to-indigo-500',
+                bgColor: 'bg-purple-50',
+                iconColor: 'text-purple-600'
               },
               {
-                icon: Brain,
-                title: "Научный подход",
-                description: "Методика интервального повторения для долгосрочного запоминания",
-                color: "from-green-400 to-green-600"
+                icon: Target,
+                title: 'Персонализация',
+                description: 'Адаптируем сложность под ваш уровень и скорость обучения',
+                gradient: 'from-emerald-500 to-teal-500',
+                bgColor: 'bg-emerald-50',
+                iconColor: 'text-emerald-600'
+              },
+              {
+                icon: Zap,
+                title: 'Быстрые результаты',
+                description: 'Заметные улучшения уже через несколько недель занятий',
+                gradient: 'from-amber-500 to-orange-500',
+                bgColor: 'bg-amber-50',
+                iconColor: 'text-amber-600'
               },
               {
                 icon: Volume2,
-                title: "Правильное произношение",
-                description: "Аудио записи от носителей языка с тонами",
-                color: "from-purple-400 to-purple-600"
+                title: 'Произношение',
+                description: 'Изучайте правильное произношение с аудио от носителей языка',
+                gradient: 'from-blue-500 to-cyan-500',
+                bgColor: 'bg-blue-50',
+                iconColor: 'text-blue-600'
               },
               {
-                icon: Star,
-                title: "Персональный прогресс",
-                description: "Отслеживание достижений и слабых мест",
-                color: "from-orange-400 to-orange-600"
+                icon: Trophy,
+                title: 'Мотивация',
+                description: 'Система достижений и прогресса поддерживает интерес к учебе',
+                gradient: 'from-pink-500 to-rose-500',
+                bgColor: 'bg-pink-50',
+                iconColor: 'text-pink-600'
               },
               {
-                icon: ChevronRight,
-                title: "Адаптивное обучение",
-                description: "Система подстраивается под ваш темп изучения",
-                color: "from-pink-400 to-pink-600"
-              },
-              {
-                icon: ArrowRight,
-                title: "Быстрые результаты",
-                description: "Заметный прогресс уже через неделю занятий",
-                color: "from-cyan-400 to-cyan-600"
+                icon: Users,
+                title: 'Сообщество',
+                description: 'Присоединяйтесь к сообществу изучающих китайский язык',
+                gradient: 'from-indigo-500 to-purple-500',
+                bgColor: 'bg-indigo-50',
+                iconColor: 'text-indigo-600'
               }
             ].map((feature, index) => (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardHeader className="text-center pb-4">
-                  <div className={`mx-auto w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 mb-4`}>
-                    <feature.icon className="h-8 w-8 text-white" />
+              <Card key={index} className="group hover:scale-105 transition-all duration-200 cursor-pointer">
+                <CardHeader className="text-center">
+                  <div className={`w-16 h-16 mx-auto mb-4 ${feature.bgColor} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                    <feature.icon className={`w-8 h-8 ${feature.iconColor}`} />
                   </div>
-                  <CardTitle className="text-xl font-bold text-gray-900">
-                    {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <CardDescription className="text-gray-600 leading-relaxed">
+                  <CardTitle className="mb-2">{feature.title}</CardTitle>
+                  <CardDescription className="text-base">
                     {feature.description}
                   </CardDescription>
-                </CardContent>
+                </CardHeader>
               </Card>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900">
-            Готовы начать изучение?
-          </h2>
-          <p className="text-xl text-gray-600">
-            Присоединяйтесь к тысячам студентов, которые уже изучают китайский с нами
-          </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Button 
-              size="lg" 
-              className="w-full sm:w-auto h-14 px-12 text-lg btn-modern"
-              onClick={handleStartLearning}
-              disabled={user && !user.email_verified}
-            >
-              {user && !user.email_verified ? (
-                <>
-                  <Mail className="mr-3 h-6 w-6" />
-                  Подтвердите email для продолжения
-                </>
-              ) : (
-                <>
-                  Начать сейчас
-                  <ArrowRight className="ml-3 h-6 w-6" />
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </section>
+        {/* CTA Section */}
+        <section className="py-16">
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardContent className="p-12 text-center">
+              <div className="max-w-2xl mx-auto space-y-6">
+                <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
+                  Готовы начать изучение?
+                </h2>
+                <p className="text-xl text-slate-600">
+                  Присоединяйтесь к тысячам студентов, которые уже изучают китайский язык с нами
+                </p>
+                <div className="pt-4">
+                  <Button 
+                    size="xl" 
+                    onClick={handleStartLearning}
+                    className="shadow-lg hover:shadow-xl group"
+                  >
+                    <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
+                    Начать бесплатно
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
 
-      {/* Contact Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto">
+        {/* Contact Section */}
+        <section className="py-16">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">
               Остались вопросы?
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-xl text-slate-600">
               Мы всегда готовы помочь вам в изучении китайского языка
             </p>
           </div>
           <FeedbackForm />
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-slate-900 text-white">
+        <div className="content-container py-12">
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center space-x-3 mb-6">
+              <div className="p-2 bg-blue-600 rounded-lg">
+                <BookOpen className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-2xl font-bold">中文学习</span>
+            </div>
+            <p className="text-slate-400 text-lg">
+              Изучайте китайский язык эффективно и с удовольствием
+            </p>
+            <div className="pt-6 text-slate-500 text-sm">
+              © 2024 中文学习. Все права защищены.
+            </div>
+          </div>
         </div>
-      </section>
+      </footer>
 
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={handleCloseAuthModal} 
-      />
-
-      {/* Custom styles */}
-      <style jsx>{`
-        .text-gradient {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        
-        .btn-modern {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border: none;
-          transition: all 0.3s ease;
-        }
-        
-        .btn-modern:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-        
-        .glass {
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .glass-dark:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-      `}</style>
+      <AuthModal isOpen={isAuthModalOpen} onClose={handleCloseAuthModal} />
     </div>
   )
 } 

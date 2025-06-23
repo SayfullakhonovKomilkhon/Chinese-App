@@ -261,24 +261,4 @@ export interface StudyOptions {
   session_type?: 'study' | 'review' | 'test'
 }
 
-export default {
-  Word,
-  Category,
-  UserWordProgress,
-  UserCategoryProgress,
-  UserStatistics,
-  UserSession,
-  UserActivity,
-  CategorySummary,
-  WordWithProgress,
-  DashboardStats,
-  StudySessionData,
-  SessionSummary,
-  Achievement,
-  ApiResponse,
-  SpacedRepetitionInput,
-  SpacedRepetitionOutput,
-  ProgressUpdateInput,
-  CategoryFilterOptions,
-  StudyOptions
-} 
+// All types are exported individually above 
