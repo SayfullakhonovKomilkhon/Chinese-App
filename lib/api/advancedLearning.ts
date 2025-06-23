@@ -602,21 +602,4 @@ export async function getLearningAnalytics(
   }
 }
 
-// Export all functions
-export default {
-  getWordsForStudy,
-  submitWordResponse,
-  startStudySession,
-  endStudySession,
-  getUserDashboard,
-  getUserStatistics,
-  updateUserStreak,
-  getCategoriesWithProgress,
-  getCategoryProgress,
-  getWordProgress,
-  getWordsDueToday,
-  getRecentSessions,
-  getSessionDetails,
-  resetUserProgress,
-  getLearningAnalytics
-} 
+// All functions are exported individually above 

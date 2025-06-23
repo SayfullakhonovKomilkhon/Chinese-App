@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 import {
   User,
   Mail,
@@ -15,10 +14,10 @@ import {
   CheckCircle,
   AlertCircle,
   Settings,
-  Shield,
-  Bell,
-  Globe
+  Shield
 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/components/AuthProvider'
 
@@ -199,15 +198,16 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-4" />
-          <p className="text-white text-lg">Загрузка профиля...</p>
-        </motion.div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 mx-auto">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-blue-600"></div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-slate-900">Загрузка профиля</h2>
+            <p className="text-slate-600">Получение настроек аккаунта...</p>
+          </div>
+        </div>
       </div>
     )
   }
@@ -219,282 +219,263 @@ export default function ProfilePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          animate={{ rotate: 360, scale: [1, 1.1, 1] }}
-          transition={{ rotate: { duration: 20, repeat: Infinity, ease: "linear" }, scale: { duration: 8, repeat: Infinity } }}
-          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-cyan-400/20 to-blue-600/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ rotate: -360, scale: [1, 1.2, 1] }}
-          transition={{ rotate: { duration: 25, repeat: Infinity, ease: "linear" }, scale: { duration: 10, repeat: Infinity } }}
-          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl"
-        />
-      </div>
-
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center gap-4">
-            <motion.button
-              onClick={() => router.back()}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2 text-white hover:bg-white/20 transition-all duration-200"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>Назад</span>
-            </motion.button>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Профиль</h1>
-              <p className="text-cyan-300">Управление настройками аккаунта</p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Profile Info Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-8"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-white">{profile?.full_name}</h2>
-              <p className="text-cyan-300">{profile?.email}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="px-2 py-1 bg-green-500/20 text-green-300 rounded-full text-xs font-medium">
-                  {profile?.role === 'admin' ? 'Администратор' : 'Студент'}
-                </span>
-                {profile?.email_verified && (
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                )}
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Settings className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-slate-900">Профиль</h1>
+                <p className="text-sm text-slate-600">Управление настройками аккаунта</p>
               </div>
             </div>
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="sm" onClick={() => router.back()}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Назад
+              </Button>
+            </div>
           </div>
-        </motion.div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
+        {/* Profile Info Card */}
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <User className="h-8 w-8 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">{profile?.full_name}</h2>
+                <p className="text-slate-600">{profile?.email}</p>
+                <div className="flex items-center space-x-3 mt-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-emerald-700 bg-emerald-100">
+                    {profile?.role === 'admin' ? 'Администратор' : 'Студент'}
+                  </span>
+                  {profile?.email_verified && (
+                    <div className="flex items-center space-x-1">
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs text-slate-600">Email подтвержден</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-wrap gap-2 mb-8"
-        >
+        <div className="flex flex-wrap gap-3 mb-8">
           {tabs.map((tab) => (
-            <button
+            <Button
               key={tab.id}
+              variant={activeTab === tab.id ? "default" : "outline"}
+              size="sm"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
-                activeTab === tab.id
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                  : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10'
-              }`}
+              className="flex items-center space-x-2"
             >
               <tab.icon className="w-4 h-4" />
               <span>{tab.label}</span>
-            </button>
+            </Button>
           ))}
-        </motion.div>
+        </div>
 
         {/* Message */}
         {message && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`mb-6 p-4 rounded-xl border ${
-              message.type === 'success'
-                ? 'bg-green-500/10 border-green-500/30 text-green-300'
-                : 'bg-red-500/10 border-red-500/30 text-red-300'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {message.type === 'success' ? (
-                <CheckCircle className="w-5 h-5" />
-              ) : (
-                <AlertCircle className="w-5 h-5" />
-              )}
-              <span>{message.text}</span>
-            </div>
-          </motion.div>
+          <Card className={`mb-6 ${
+            message.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50'
+              : 'border-red-200 bg-red-50'
+          }`}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                {message.type === 'success' ? (
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                )}
+                <span className={`text-sm font-medium ${
+                  message.type === 'success' ? 'text-emerald-800' : 'text-red-800'
+                }`}>
+                  {message.text}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Tab Content */}
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6"
-        >
-          {activeTab === 'personal' && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Личная информация
-              </h3>
-              
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
-                  Полное имя
-                </label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  placeholder="Введите ваше полное имя"
-                />
-              </div>
-
-              <button
-                onClick={updatePersonalInfo}
-                disabled={saving}
-                className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50"
-              >
-                {saving ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Save className="w-5 h-5" />
-                )}
-                <span>{saving ? 'Сохранение...' : 'Сохранить изменения'}</span>
-              </button>
-            </div>
-          )}
-
-          {activeTab === 'security' && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Изменить пароль
-              </h3>
-
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
-                  Новый пароль
-                </label>
-                <div className="relative">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              {(() => {
+                const currentTab = tabs.find(tab => tab.id === activeTab)
+                if (currentTab) {
+                  const IconComponent = currentTab.icon
+                  return <IconComponent className="w-5 h-5" />
+                }
+                return null
+              })()}
+              <span>{tabs.find(tab => tab.id === activeTab)?.label}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {activeTab === 'personal' && (
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">
+                    Полное имя
+                  </label>
                   <input
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent pr-12"
-                    placeholder="Введите новый пароль"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    placeholder="Введите ваше полное имя"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
-                  >
-                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
                 </div>
+
+                <Button
+                  onClick={updatePersonalInfo}
+                  disabled={saving}
+                  className="flex items-center space-x-2"
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  <span>{saving ? 'Сохранение...' : 'Сохранить изменения'}</span>
+                </Button>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
-                  Подтвердите новый пароль
-                </label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent pr-12"
-                    placeholder="Подтвердите новый пароль"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                onClick={changePassword}
-                disabled={saving || !newPassword || !confirmPassword}
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-200 disabled:opacity-50"
-              >
-                {saving ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Lock className="w-5 h-5" />
-                )}
-                <span>{saving ? 'Изменение...' : 'Изменить пароль'}</span>
-              </button>
-            </div>
-          )}
-
-          {activeTab === 'email' && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <Mail className="w-5 h-5" />
-                Изменить Email адрес
-              </h3>
-
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5" />
-                  <div className="text-blue-300 text-sm">
-                    <p className="font-medium mb-1">Важная информация:</p>
-                    <p>После изменения email адреса вам потребуется подтвердить новый адрес. На оба адреса (старый и новый) будут отправлены письма с подтверждением.</p>
+            {activeTab === 'security' && (
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">
+                    Новый пароль
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      placeholder="Введите новый пароль"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
-                  Текущий email
-                </label>
-                <input
-                  type="email"
-                  value={profile?.email || ''}
-                  disabled
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white/50 cursor-not-allowed"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">
+                    Подтвердите новый пароль
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      placeholder="Подтвердите новый пароль"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
-                  Новый email адрес
-                </label>
-                <input
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  placeholder="Введите новый email адрес"
-                />
+                <Button
+                  onClick={changePassword}
+                  disabled={saving || !newPassword || !confirmPassword}
+                  variant="purple"
+                  className="flex items-center space-x-2"
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Lock className="w-4 h-4" />
+                  )}
+                  <span>{saving ? 'Изменение...' : 'Изменить пароль'}</span>
+                </Button>
               </div>
+            )}
 
-              <button
-                onClick={changeEmail}
-                disabled={saving || !newEmail || newEmail === profile?.email}
-                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50"
-              >
-                {saving ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Mail className="w-5 h-5" />
-                )}
-                <span>{saving ? 'Отправка...' : 'Изменить Email'}</span>
-              </button>
-            </div>
-          )}
-        </motion.div>
-      </div>
+            {activeTab === 'email' && (
+              <div className="space-y-6">
+                <Card className="border-blue-200 bg-blue-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div className="text-blue-800 text-sm">
+                        <p className="font-medium mb-1">Важная информация:</p>
+                        <p>После изменения email адреса вам потребуется подтвердить новый адрес. На оба адреса (старый и новый) будут отправлены письма с подтверждением.</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">
+                    Текущий email
+                  </label>
+                  <input
+                    type="email"
+                    value={profile?.email || ''}
+                    disabled
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-500 bg-slate-50 cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">
+                    Новый email адрес
+                  </label>
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    placeholder="Введите новый email адрес"
+                  />
+                </div>
+
+                <Button
+                  onClick={changeEmail}
+                  disabled={saving || !newEmail || newEmail === profile?.email}
+                  variant="success"
+                  className="flex items-center space-x-2"
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Mail className="w-4 h-4" />
+                  )}
+                  <span>{saving ? 'Отправка...' : 'Изменить Email'}</span>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
     </div>
   )
 } 

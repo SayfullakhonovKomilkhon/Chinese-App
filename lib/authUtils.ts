@@ -27,23 +27,140 @@ export type UserRole = 'student' | 'admin'
  */
 export async function getCurrentUser(): Promise<UserProfile | null> {
   try {
-    const { data: { user }, error } = await supabase.auth.getUser()
+    console.log('getCurrentUser: Starting auth check...')
     
-    if (error || !user) {
+    // Add timeout to prevent hanging
+    const authPromise = supabase.auth.getUser()
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Auth check timeout')), 8000)
+    })
+    
+    const { data: { user }, error } = await Promise.race([authPromise, timeoutPromise]) as any
+    
+    if (error) {
+      console.log('getCurrentUser: Auth error:', error.message)
+      // If it's just a session missing error, that's normal for non-authenticated users
+      if (error.message === 'Auth session missing!' || error.message.includes('session')) {
+        console.log('getCurrentUser: No active session - user not logged in')
+        return null
+      }
+      return null
+    }
+    
+    if (!user) {
+      console.log('getCurrentUser: No authenticated user found')
       return null
     }
 
-    // Get user profile directly from users table
-    const { data: profileData, error: profileError } = await supabase
+    console.log('getCurrentUser: Auth user found, ID:', user.id, 'Email:', user.email)
+
+    // Get user profile directly from users table with detailed error handling
+    console.log('getCurrentUser: Fetching profile from users table...')
+    
+    // Add timeout to database query
+    const dbPromise = supabase
       .from('users')
       .select('*')
       .eq('uuid_id', user.id)
       .single()
+    
+    const dbTimeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 5000)
+    })
+    
+    const { data: profileData, error: profileError } = await Promise.race([dbPromise, dbTimeoutPromise]) as any
 
     if (profileError) {
-      console.error('Error fetching user profile:', profileError)
-      return null
+      console.error('getCurrentUser: Profile fetch error:', profileError)
+      console.error('Error code:', profileError.code)
+      console.error('Error message:', profileError.message)
+      console.error('Error hint:', profileError.hint)
+      
+      // Handle specific RLS error
+      if (profileError.code === '42501' || profileError.message?.includes('RLS') || profileError.message?.includes('permission')) {
+        console.error('getCurrentUser: RLS permission error - user cannot read their own profile!')
+        console.error('This indicates RLS policies are blocking user profile access')
+        
+        // Try bypass function as fallback
+        try {
+          console.log('getCurrentUser: Attempting bypass function for role fetch...')
+          const { data: roleData, error: roleError } = await supabase.rpc('get_user_role_bypass', {
+            user_uuid: user.id
+          })
+          
+          if (!roleError && roleData) {
+            console.log('getCurrentUser: Role fetched via bypass:', roleData)
+            // Create minimal profile with role from bypass
+            const fallbackProfile: UserProfile = {
+              id: 0, // We don't have the ID
+              uuid_id: user.id,
+              email: user.email || '',
+              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+              role: roleData as UserRole,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              email_verified: user.email_confirmed_at !== null,
+              email_confirmed_at: user.email_confirmed_at
+            }
+            console.log('getCurrentUser: Using fallback profile with role:', roleData)
+            return fallbackProfile
+          }
+        } catch (bypassError) {
+          console.error('getCurrentUser: Bypass function also failed:', bypassError)
+        }
+      }
+
+      if (profileError.code !== 'PGRST116') {
+        console.error('getCurrentUser: Unhandled profile error, returning null')
+        return null
+      }
     }
+
+    if (!profileData) {
+      console.log('getCurrentUser: No profile data found, user needs to be created in users table')
+      
+      // Try to create user record in users table if it doesn't exist
+      console.log('getCurrentUser: Attempting to create user record...')
+      const newUserData = {
+        uuid_id: user.id,
+        email: user.email || '',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+        role: (user.user_metadata?.role || 'student') as UserRole,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      const { data: createdUser, error: createError } = await supabase
+        .from('users')
+        .insert(newUserData)
+        .select('*')
+        .single()
+
+      if (createError) {
+        console.error('getCurrentUser: Error creating user profile:', createError)
+        console.error('Create error code:', createError.code)
+        console.error('Create error message:', createError.message)
+        
+        if (createError.code === '42501' || createError.message?.includes('RLS')) {
+          console.error('getCurrentUser: RLS blocking user creation - this is a critical auth configuration issue!')
+        }
+        return null
+      }
+
+      console.log('getCurrentUser: User profile created successfully:', createdUser.email, 'Role:', createdUser.role)
+      
+      // Return the newly created profile
+      const userProfile: UserProfile = {
+        ...createdUser,
+        email_verified: user.email_confirmed_at !== null,
+        email_confirmed_at: user.email_confirmed_at
+      }
+
+      console.log('getCurrentUser: Success, returning newly created user profile')
+      return userProfile
+    }
+
+    console.log('getCurrentUser: Profile data found:', profileData.email, 'Role:', profileData.role)
 
     // Add email verification status from auth user
     const userProfile: UserProfile = {
@@ -52,9 +169,10 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
       email_confirmed_at: user.email_confirmed_at
     }
 
+    console.log('getCurrentUser: Success, returning user profile with role:', userProfile.role)
     return userProfile
   } catch (error) {
-    console.error('Error getting current user:', error)
+    console.error('getCurrentUser: Unexpected error:', error)
     return null
   }
 }
@@ -141,6 +259,68 @@ export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut()
   if (error) {
     throw error
+  }
+}
+
+/**
+ * Refresh the current session
+ */
+export async function refreshSession(): Promise<boolean> {
+  try {
+    console.log('refreshSession: Attempting to refresh session...')
+    const { data, error } = await supabase.auth.refreshSession()
+    
+    if (error) {
+      console.log('refreshSession: Error refreshing session:', error.message)
+      return false
+    }
+    
+    if (data.session) {
+      console.log('refreshSession: Session refreshed successfully')
+      return true
+    }
+    
+    console.log('refreshSession: No session to refresh')
+    return false
+  } catch (error) {
+    console.error('refreshSession: Unexpected error:', error)
+    return false
+  }
+}
+
+/**
+ * Check if current session is valid and refresh if needed
+ */
+export async function ensureValidSession(): Promise<boolean> {
+  try {
+    console.log('ensureValidSession: Checking session validity...')
+    const { data: { session }, error } = await supabase.auth.getSession()
+    
+    if (error) {
+      console.log('ensureValidSession: Session check error:', error.message)
+      return false
+    }
+    
+    if (!session) {
+      console.log('ensureValidSession: No session found')
+      return false
+    }
+    
+    // Check if token is close to expiry (within 5 minutes)
+    const expiresAt = session.expires_at || 0
+    const now = Math.floor(Date.now() / 1000)
+    const timeUntilExpiry = expiresAt - now
+    
+    if (timeUntilExpiry < 300) { // Less than 5 minutes
+      console.log('ensureValidSession: Token expires soon, refreshing...')
+      return await refreshSession()
+    }
+    
+    console.log('ensureValidSession: Session is valid')
+    return true
+  } catch (error) {
+    console.error('ensureValidSession: Unexpected error:', error)
+    return false
   }
 }
 
