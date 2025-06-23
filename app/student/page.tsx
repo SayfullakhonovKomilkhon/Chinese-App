@@ -226,25 +226,27 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <GraduationCap className="h-6 w-6 text-blue-600" />
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
-              <div>
-                <h1 className="text-lg font-bold text-slate-900">Панель студента</h1>
-                <p className="text-sm text-slate-600">Добро пожаловать, {user.full_name || user.email.split('@')[0]}</p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">Студент</h1>
+                <p className="text-xs sm:text-sm text-slate-600 truncate">
+                  {user.full_name || user.email.split('@')[0]}
+                </p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" onClick={handleSettings}>
-                <Settings className="w-4 h-4 mr-2" />
-                Настройки
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+              <Button variant="ghost" size="sm" onClick={handleSettings} className="px-2 sm:px-3">
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">Настройки</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Выйти
+              <Button variant="ghost" size="sm" onClick={handleSignOut} className="px-2 sm:px-3">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">Выйти</span>
               </Button>
             </div>
           </div>
@@ -252,50 +254,50 @@ export default function StudentDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-4 sm:py-6 lg:py-8">
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <BookOpen className="h-6 w-6 text-blue-600" />
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Всего слов</p>
-                                     <p className="text-2xl font-bold text-slate-900">
-                     {dashboardStats?.user_statistics?.total_words_learned || 0}
-                   </p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-slate-600 truncate">Слов</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
+                    {dashboardStats?.user_statistics?.total_words_learned || 0}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-emerald-100 rounded-lg">
-                  <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="p-1.5 sm:p-2 bg-emerald-100 rounded-lg flex-shrink-0">
+                  <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-emerald-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Изучено</p>
-                                     <p className="text-2xl font-bold text-slate-900">
-                     {dashboardStats?.user_statistics?.total_words_learned || 0}
-                   </p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-slate-600 truncate">Изучено</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
+                    {dashboardStats?.user_statistics?.total_words_learned || 0}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-amber-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-amber-600" />
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="p-1.5 sm:p-2 bg-amber-100 rounded-lg flex-shrink-0">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-amber-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600">На сегодня</p>
-                  <p className="text-2xl font-bold text-slate-900">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-slate-600 truncate">Сегодня</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
                     {wordsDueToday}
                   </p>
                 </div>
@@ -304,16 +306,16 @@ export default function StudentDashboard() {
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Trophy className="h-6 w-6 text-purple-600" />
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                  <Trophy className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Прогресс</p>
-                                     <p className="text-2xl font-bold text-slate-900">
-                     {Math.round(dashboardStats?.user_statistics?.overall_accuracy || 0)}%
-                   </p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-slate-600 truncate">Точность</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
+                    {Math.round(dashboardStats?.user_statistics?.overall_accuracy || 0)}%
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -321,15 +323,15 @@ export default function StudentDashboard() {
         </div>
 
         {/* Categories Section */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Категории для изучения</h2>
-              <p className="text-slate-600">Выберите категорию для продолжения обучения</p>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">Категории</h2>
+              <p className="text-sm sm:text-base text-slate-600 hidden sm:block">Выберите категорию для продолжения обучения</p>
             </div>
-            <Button variant="outline" onClick={loadDashboardData}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Обновить
+            <Button variant="outline" onClick={loadDashboardData} size="sm" className="flex-shrink-0">
+              <RefreshCw className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Обновить</span>
             </Button>
           </div>
 
@@ -344,33 +346,33 @@ export default function StudentDashboard() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {sortedCategories.map((category) => {
                 const progress = category.progress
-                                 const percentage = progress?.completion_percentage || 0
+                const percentage = progress?.completion_percentage || 0
                 const status = progress?.status || 'not_started'
                 
                 return (
                   <Card key={category.id} className="hover:shadow-md cursor-pointer group" onClick={() => handleStartLearning(category.id, category.name_russian)}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-blue-600">
+                    <CardContent className="p-4 sm:p-5 lg:p-6">
+                      <div className="flex items-start justify-between mb-3 sm:mb-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1 group-hover:text-blue-600 truncate">
                             {category.name_russian}
                           </h3>
-                          <p className="text-sm text-slate-600 mb-3">
+                          <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 line-clamp-2">
                             {category.description_russian || 'Изучение китайского языка'}
                           </p>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryStatusColor(status)}`}>
                             {getCategoryStatusText(status)}
                           </span>
                         </div>
-                        <div className="p-2 bg-slate-100 rounded-lg ml-4">
-                          <BookOpen className="h-5 w-5 text-slate-600" />
+                        <div className="p-1.5 sm:p-2 bg-slate-100 rounded-lg ml-3 sm:ml-4 flex-shrink-0">
+                          <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600" />
                         </div>
                       </div>
                       
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-slate-600">Прогресс</span>
                           <span className="font-semibold text-slate-900">{percentage}%</span>
@@ -382,14 +384,16 @@ export default function StudentDashboard() {
                           />
                         </div>
                         <div className="flex items-center justify-between text-xs text-slate-500">
-                          <span>Уровень {category.difficulty_level}</span>
-                                                     <span>{progress?.words_learned || 0} слов изучено</span>
+                          <span>HSK {category.difficulty_level}</span>
+                          <span>{progress?.words_learned || 0} слов</span>
                         </div>
                       </div>
                       
-                      <Button className="w-full mt-4" variant="outline">
+                      <Button className="w-full mt-3 sm:mt-4" variant="outline" size="sm">
                         <Play className="w-4 h-4 mr-2" />
-                        {status === 'not_started' ? 'Начать изучение' : 'Продолжить'}
+                        <span className="text-sm">
+                          {status === 'not_started' ? 'Начать' : 'Продолжить'}
+                        </span>
                       </Button>
                     </CardContent>
                   </Card>

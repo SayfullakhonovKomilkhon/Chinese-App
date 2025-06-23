@@ -272,30 +272,30 @@ export default function ContentManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Tab Navigation */}
       <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg">
         <button
           onClick={() => setActiveTab('words')}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
+          className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md font-medium text-sm transition-colors ${
             activeTab === 'words' 
               ? 'bg-white text-blue-700 shadow-sm' 
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <BookOpen className="h-4 w-4 inline mr-2" />
-          Слова
+          <BookOpen className="h-4 w-4 inline mr-1 sm:mr-2" />
+          <span className="text-xs sm:text-sm">Слова</span>
         </button>
         <button
           onClick={() => setActiveTab('categories')}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
+          className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md font-medium text-sm transition-colors ${
             activeTab === 'categories' 
               ? 'bg-white text-blue-700 shadow-sm' 
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Tag className="h-4 w-4 inline mr-2" />
-          Категории
+          <Tag className="h-4 w-4 inline mr-1 sm:mr-2" />
+          <span className="text-xs sm:text-sm">Категории</span>
         </button>
       </div>
 
@@ -304,39 +304,39 @@ export default function ContentManagement() {
           {/* Words Management */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    Управление словами
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="truncate">Управление словами</span>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm hidden sm:block">
                     Создавайте, редактируйте и управляйте словарным запасом
                   </CardDescription>
                 </div>
-                <Button onClick={handleCreateWord}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Добавить слово
+                <Button onClick={handleCreateWord} size="sm" className="flex-shrink-0">
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline ml-2">Добавить слово</span>
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               {/* Search and Filter Controls */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Поиск по китайскому, пиньину или переводу..."
+                    placeholder="Поиск..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <select
                   value={selectedCategory || ''}
                   onChange={(e) => setSelectedCategory(e.target.value ? parseInt(e.target.value) : null)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 sm:px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0 sm:min-w-48"
                 >
                   <option value="">Все категории</option>
                   {categories.map((category) => (
@@ -349,57 +349,57 @@ export default function ContentManagement() {
 
               {/* Words Table */}
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
+                <table className="w-full border-collapse min-w-[600px]">
                   <thead>
                     <tr className="border-b border-slate-200">
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Слово</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Категория</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Статистика</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Действия</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-xs sm:text-sm text-slate-700">Слово</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-xs sm:text-sm text-slate-700">Категория</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-xs sm:text-sm text-slate-700 hidden sm:table-cell">Статистика</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-xs sm:text-sm text-slate-700">Действия</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredContent.map((word) => (
                       <tr key={word.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-4 px-4">
+                        <td className="py-3 sm:py-4 px-2 sm:px-4">
                           <div className="space-y-1">
-                            <div className="font-bold text-xl text-slate-900">{word.chinese_simplified}</div>
-                            <div className="text-sm text-blue-600 font-medium">{word.pinyin}</div>
-                            <div className="text-sm text-slate-700">{word.russian_translation}</div>
+                            <div className="font-bold text-lg sm:text-xl text-slate-900">{word.chinese_simplified}</div>
+                            <div className="text-xs sm:text-sm text-blue-600 font-medium">{word.pinyin}</div>
+                            <div className="text-xs sm:text-sm text-slate-700 truncate max-w-32 sm:max-w-none">{word.russian_translation}</div>
                             {word.example_sentence_chinese && (
-                              <div className="text-xs text-slate-500 italic">
+                              <div className="text-xs text-slate-500 italic hidden sm:block">
                                 {word.example_sentence_chinese}
                               </div>
                             )}
                           </div>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-3 sm:py-4 px-2 sm:px-4">
                           <div className="space-y-1">
-                            <div className="font-medium text-slate-900">{word.category_name}</div>
+                            <div className="font-medium text-xs sm:text-sm text-slate-900 truncate">{word.category_name}</div>
                             <div className="text-xs text-slate-600">HSK {word.category_difficulty}</div>
                           </div>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-3 sm:py-4 px-2 sm:px-4 hidden sm:table-cell">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 text-sm">
                               <BarChart3 className="h-4 w-4 text-slate-400" />
-                              <span>{word.usage_stats.total_learners} изучающих</span>
+                              <span>{word.usage_stats.total_learners}</span>
                             </div>
                             <div className="text-xs text-slate-600">
-                              {word.usage_stats.average_accuracy}% точность • {word.usage_stats.times_studied} попыток
+                              {word.usage_stats.average_accuracy}% • {word.usage_stats.times_studied}
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleEditWord(word)}>
+                        <td className="py-3 sm:py-4 px-2 sm:px-4">
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleEditWord(word)} className="px-2 sm:px-3">
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
                               size="sm" 
                               variant="outline" 
                               onClick={() => handleDeleteWord(word.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -557,30 +557,30 @@ export default function ContentManagement() {
           {/* Categories Management */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Tag className="h-5 w-5" />
-                    Управление категориями
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Tag className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="truncate">Управление категориями</span>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm hidden sm:block">
                     Создавайте и управляйте категориями для организации контента
                   </CardDescription>
                 </div>
-                <Button onClick={handleCreateCategory}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Добавить категорию
+                <Button onClick={handleCreateCategory} size="sm" className="flex-shrink-0">
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline ml-2">Добавить категорию</span>
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {categories.map((category) => (
                   <Card key={category.id} className="border-slate-200">
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 sm:p-5 lg:p-6">
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0">
                             HSK {category.difficulty_level}
                           </span>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -593,28 +593,28 @@ export default function ContentManagement() {
                         </div>
                         
                         <div>
-                          <h3 className="font-semibold text-slate-900">{category.name_russian}</h3>
-                          <p className="text-sm text-slate-600 font-mono">HSK {category.difficulty_level}</p>
+                          <h3 className="font-semibold text-sm sm:text-base text-slate-900 truncate">{category.name_russian}</h3>
+                          <p className="text-xs sm:text-sm text-slate-600">HSK {category.difficulty_level}</p>
                         </div>
                         
                         {category.description_russian && (
-                          <p className="text-sm text-slate-700">{category.description_russian}</p>
+                          <p className="text-xs sm:text-sm text-slate-700 line-clamp-2">{category.description_russian}</p>
                         )}
                         
-                        <div className="text-sm text-slate-600">
+                        <div className="text-xs sm:text-sm text-slate-600">
                           {category.total_words} слов • Порядок: {category.display_order}
                         </div>
                         
-                        <div className="flex items-center gap-2 pt-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEditCategory(category)}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Редактировать
+                        <div className="flex items-center gap-1 sm:gap-2 pt-2">
+                          <Button size="sm" variant="outline" onClick={() => handleEditCategory(category)} className="flex-1 sm:flex-none">
+                            <Edit className="h-4 w-4" />
+                            <span className="ml-1 text-xs hidden sm:inline">Редактировать</span>
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline" 
                             onClick={() => handleDeleteCategory(category.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

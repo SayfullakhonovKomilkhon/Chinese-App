@@ -150,6 +150,13 @@ export interface WordWithProgress extends Word {
   progress?: UserWordProgress
   is_due_for_review: boolean
   days_until_review?: number
+  // SM2 enhanced fields from get_words_for_study function
+  learning_status: 'new' | 'learning' | 'learned' | 'mastered'
+  repetition_count: number
+  next_review_date: string
+  category_difficulty: number
+  easiness_factor: number
+  interval_days: number
 }
 
 // Dashboard Statistics (aggregated data)

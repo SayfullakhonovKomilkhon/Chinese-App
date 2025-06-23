@@ -6,7 +6,7 @@
 -- ============================================================================
 
 -- ============================================================================
--- 1. GET WORDS FOR STUDY SESSION
+-- 1. GET WORDS FOR STUDY SESSION (Enhanced with SM2 and difficulty level logic)
 -- ============================================================================
 -- Returns words that need to be studied based on spaced repetition
 CREATE OR REPLACE FUNCTION get_words_for_study(
@@ -26,7 +26,10 @@ RETURNS TABLE (
     audio_url VARCHAR,
     learning_status VARCHAR,
     repetition_count INTEGER,
-    next_review_date TIMESTAMP WITH TIME ZONE
+    next_review_date TIMESTAMP WITH TIME ZONE,
+    category_difficulty INTEGER,
+    easiness_factor DECIMAL,
+    interval_days INTEGER
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -44,18 +47,31 @@ BEGIN
             COALESCE(uwp.learning_status, 'new') as learning_status,
             COALESCE(uwp.repetition_count, 0) as repetition_count,
             COALESCE(uwp.next_review_date, NOW()) as next_review_date,
+            c.difficulty_level as category_difficulty,
+            COALESCE(uwp.easiness_factor, 2.5) as easiness_factor,
+            COALESCE(uwp.interval_days, 1) as interval_days,
             -- Priority calculation (lower number = higher priority)
+            -- SM2 + Difficulty Level Logic: Hard categories (difficulty_level >= 3) show every day
             CASE 
                 WHEN uwp.learning_status IS NULL OR uwp.learning_status = 'new' THEN 1
-                WHEN uwp.learning_status = 'learning' AND uwp.next_review_date <= NOW() THEN 2
-                WHEN uwp.learning_status = 'learning' THEN 3
-                ELSE 4
+                WHEN c.difficulty_level >= 3 THEN 2  -- Hard categories: daily review regardless of interval
+                WHEN uwp.learning_status = 'learning' AND uwp.next_review_date <= NOW() THEN 3
+                WHEN uwp.learning_status = 'learning' THEN 4
+                ELSE 5
             END as priority
         FROM words w
+        JOIN categories c ON w.category_id = c.id
         LEFT JOIN user_word_progress uwp ON w.id = uwp.word_id AND uwp.user_uuid = p_user_uuid
         WHERE w.category_id = p_category_id
         AND w.is_active = true
+        AND c.is_active = true
         AND (uwp.learning_status IS NULL OR uwp.learning_status != 'mastered')
+        -- SM2 + Difficulty Level Filter: Show cards if due for review OR in hard category
+        AND (
+            uwp.next_review_date IS NULL 
+            OR uwp.next_review_date <= NOW()
+            OR c.difficulty_level >= 3  -- Hard categories: show every day
+        )
         ORDER BY priority ASC, uwp.next_review_date ASC NULLS FIRST, RANDOM()
         LIMIT p_limit
     )
@@ -71,7 +87,10 @@ BEGIN
         wp.audio_url,
         wp.learning_status,
         wp.repetition_count,
-        wp.next_review_date
+        wp.next_review_date,
+        wp.category_difficulty,
+        wp.easiness_factor,
+        wp.interval_days
     FROM word_priorities wp;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -136,8 +155,9 @@ BEGIN
         ) RETURNING * INTO v_current_progress;
     END IF;
     
-    -- Apply SuperMemo 2 algorithm for easiness factor
-    v_new_easiness := v_current_progress.easiness_factor + (0.1 - (5 - v_quality) * (0.08 + (5 - v_quality) * 0.02));
+    -- Apply SuperMemo 2 algorithm for easiness factor using the exact formula:
+    -- EF' = EF - 0.8 + 0.28 * quality - 0.02 * quality²
+    v_new_easiness := v_current_progress.easiness_factor - 0.8 + 0.28 * v_quality - 0.02 * (v_quality * v_quality);
     v_new_easiness := GREATEST(v_new_easiness, 1.3); -- Minimum easiness factor
     
     -- Calculate repetition count and interval based on SM-2 algorithm

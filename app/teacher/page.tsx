@@ -108,26 +108,26 @@ export default function TeacherPanel() {
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-white" />
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">Панель преподавателя</h1>
-                <p className="text-sm text-slate-600">Управление платформой обучения</p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 truncate">Преподаватель</h1>
+                <p className="text-xs sm:text-sm text-slate-600 truncate hidden sm:block">Управление платформой обучения</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-slate-900">{user.full_name || user.email}</p>
+            <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 flex-shrink-0">
+              <div className="text-right hidden md:block">
+                <p className="text-sm font-medium text-slate-900 truncate max-w-32 lg:max-w-none">{user.full_name || user.email}</p>
                 <p className="text-xs text-slate-600">Администратор</p>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleSettings}>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Button variant="outline" size="sm" onClick={handleSettings} className="px-2 sm:px-3">
                   <Settings className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                <Button variant="outline" size="sm" onClick={handleSignOut} className="px-2 sm:px-3">
                   <LogOut className="h-4 w-4" />
                 </Button>
               </div>
@@ -138,52 +138,54 @@ export default function TeacherPanel() {
 
       {/* Tab Navigation */}
       <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <BarChart3 className="h-4 w-4 inline mr-2" />
-              Обзор
-            </button>
-            <button
-              onClick={() => setActiveTab('students')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'students'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <Users className="h-4 w-4 inline mr-2" />
-              Студенты
-            </button>
-            <button
-              onClick={() => setActiveTab('content')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'content'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <BookOpen className="h-4 w-4 inline mr-2" />
-              Контент
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'analytics'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <TrendingUp className="h-4 w-4 inline mr-2" />
-              Аналитика
-            </button>
+        <div className="max-w-7xl mx-auto">
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex space-x-4 sm:space-x-6 lg:space-x-8 px-4 sm:px-6 lg:px-8 min-w-max">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                  activeTab === 'overview'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <BarChart3 className="h-4 w-4 inline mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Обзор</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('students')}
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                  activeTab === 'students'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <Users className="h-4 w-4 inline mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Студенты</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('content')}
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                  activeTab === 'content'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <BookOpen className="h-4 w-4 inline mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Контент</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('analytics')}
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                  activeTab === 'analytics'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <TrendingUp className="h-4 w-4 inline mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Аналитика</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -191,7 +193,7 @@ export default function TeacherPanel() {
       {/* Content */}
       <div className="max-w-7xl mx-auto">
         {activeTab === 'overview' && (
-          <div className="p-6 space-y-6">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
             {loading ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

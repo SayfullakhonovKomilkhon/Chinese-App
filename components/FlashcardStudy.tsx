@@ -218,22 +218,22 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
         />
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-8 min-h-screen flex flex-col">
+      <div className="relative z-10 container mx-auto px-4 py-4 sm:py-6 lg:py-8 min-h-screen flex flex-col">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-4 sm:mb-6 lg:mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 truncate px-2">
             {category}
           </h1>
-          <p className="text-cyan-300 text-lg">
+          <p className="text-cyan-300 text-sm sm:text-base lg:text-lg">
             Карточка {currentIndex + 1} из {currentQuestions.length}
           </p>
           
           {/* Progress bar */}
-          <div className="w-full max-w-md mx-auto mt-4 bg-white/10 rounded-full h-2 backdrop-blur-sm">
+          <div className="w-full max-w-xs sm:max-w-md mx-auto mt-3 sm:mt-4 bg-white/10 rounded-full h-2 backdrop-blur-sm">
             <motion.div
               className="h-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full"
               initial={{ width: 0 }}
@@ -244,8 +244,8 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
         </motion.div>
 
         {/* Main flashcard area */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-full max-w-lg">
+        <div className="flex-1 flex items-center justify-center px-2">
+          <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
             <AnimatePresence mode="wait" key={currentIndex}>
               <motion.div
                 key={`card-${currentIndex}`}
@@ -256,7 +256,7 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
                 className="relative"
               >
                 {/* Glassmorphism card */}
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-8 md:p-12 text-center relative overflow-hidden">
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-4 sm:p-6 md:p-8 lg:p-12 text-center relative overflow-hidden">
                   {/* Card glow effect */}
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-600/10 rounded-2xl" />
                   
@@ -265,10 +265,11 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
                     <motion.div
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="absolute top-4 right-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1 shadow-lg"
+                      className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-1 shadow-lg"
                     >
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Изучено</span>
+                      <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Изучено</span>
+                      <span className="sm:hidden">✓</span>
                     </motion.div>
                   )}
                   
@@ -278,12 +279,12 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
-                      className="mb-6"
+                      className="mb-4 sm:mb-6"
                     >
-                      <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-wide">
+                      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-3 sm:mb-4 tracking-wide">
                         {currentQuestion.hanzi}
                       </h2>
-                      <p className="text-xl md:text-2xl text-cyan-300 font-medium italic">
+                      <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-cyan-300 font-medium italic">
                         {currentQuestion.pinyin}
                       </p>
                     </motion.div>
@@ -296,10 +297,10 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -20, scale: 0.9 }}
                           transition={{ duration: 0.4, ease: "easeOut" }}
-                          className="mb-8"
+                          className="mb-4 sm:mb-6 lg:mb-8"
                         >
-                          <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 backdrop-blur-sm rounded-xl border border-emerald-400/30 p-4">
-                            <p className="text-2xl md:text-3xl font-semibold text-emerald-300">
+                          <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 backdrop-blur-sm rounded-xl border border-emerald-400/30 p-3 sm:p-4">
+                            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-emerald-300">
                               {currentQuestion.translation}
                             </p>
                           </div>
@@ -308,16 +309,16 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
                     </AnimatePresence>
 
                     {/* Action buttons */}
-                    <div className="flex gap-4 justify-center">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                       {/* Play Audio button */}
                       <motion.button
                         whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(168, 85, 247, 0.4)" }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handlePlayAudio}
-                        className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-purple-500/25 backdrop-blur-sm border border-purple-400/30"
+                        className="group relative inline-flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 lg:px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-purple-500/25 backdrop-blur-sm border border-purple-400/30"
                       >
-                        <Volume2 className="w-6 h-6" />
-                        <span className="text-lg">Воспроизвести</span>
+                        <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <span className="text-sm sm:text-base lg:text-lg">Аудио</span>
                         
                         {/* Button glow effect */}
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 to-violet-500/0 group-hover:from-purple-400/20 group-hover:to-violet-500/20 rounded-2xl transition-all duration-300" />
@@ -328,16 +329,16 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
                       whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(34, 211, 238, 0.4)" }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleShowTranslation}
-                      className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 backdrop-blur-sm border border-cyan-400/30"
+                      className="group relative inline-flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 lg:px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 backdrop-blur-sm border border-cyan-400/30"
                     >
                       <motion.div
                         animate={{ rotate: showTranslation ? 180 : 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        {showTranslation ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
+                        {showTranslation ? <EyeOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <Eye className="w-5 h-5 sm:w-6 sm:h-6" />}
                       </motion.div>
-                      <span className="text-lg">
-                        {showTranslation ? 'Скрыть перевод' : 'Показать перевод'}
+                      <span className="text-sm sm:text-base lg:text-lg">
+                        {showTranslation ? 'Скрыть' : 'Перевод'}
                       </span>
                       
                       {/* Button glow effect */}
@@ -354,17 +355,17 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="flex gap-4 justify-center mt-8"
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mt-4 sm:mt-6 lg:mt-8"
             >
               {/* Reset button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleReset}
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-500/80 to-pink-500/80 hover:from-purple-400 hover:to-pink-400 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 backdrop-blur-sm border border-purple-400/30 shadow-lg hover:shadow-purple-500/25"
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500/80 to-pink-500/80 hover:from-purple-400 hover:to-pink-400 text-white font-semibold py-3 px-4 sm:px-6 rounded-2xl transition-all duration-300 backdrop-blur-sm border border-purple-400/30 shadow-lg hover:shadow-purple-500/25"
               >
-                <RotateCcw className="w-5 h-5" />
-                <span>Сначала</span>
+                <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Сначала</span>
               </motion.button>
 
               {/* Next button */}
@@ -376,16 +377,16 @@ export default function FlashcardStudy({ questions, category, onComplete }: Flas
                 whileTap={{ scale: 0.95 }}
                 onClick={handleNextCard}
                 disabled={isAnimating}
-                className="group relative flex items-center gap-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 backdrop-blur-sm border border-emerald-400/30 disabled:opacity-50"
+                className="group relative flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 lg:px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 backdrop-blur-sm border border-emerald-400/30 disabled:opacity-50"
               >
-                <span className="text-lg">
-                  {currentIndex === currentQuestions.length - 1 ? 'Завершить' : 'Следующая карточка'}
+                <span className="text-sm sm:text-base lg:text-lg">
+                  {currentIndex === currentQuestions.length - 1 ? 'Завершить' : 'Далее'}
                 </span>
                 <motion.div
                   animate={{ x: isAnimating ? 5 : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <ChevronRight className="w-6 h-6" />
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
                 </motion.div>
                 
                 {/* Button pulse effect */}

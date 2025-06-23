@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -104,7 +104,8 @@ function EmailVerificationBanner() {
   )
 }
 
-export default function HomePage() {
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+function HomePageContent() {
   const [isPlayingDemo, setIsPlayingDemo] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const { user, loading } = useAuth()
@@ -248,208 +249,242 @@ export default function HomePage() {
                   onClick={handleStartLearning}
                   className="shadow-md hover:shadow-lg"
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Начать изучение
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <ArrowRight className="w-5 h-5 mr-2" />
+                  {user ? 'Продолжить изучение' : 'Начать изучение'}
                 </Button>
                 <Button 
                   variant="outline" 
                   size="lg"
                   onClick={handleDemoAudio}
                   disabled={isPlayingDemo}
+                  className="shadow-md hover:shadow-lg"
                 >
                   <Volume2 className={`w-5 h-5 mr-2 ${isPlayingDemo ? 'animate-pulse' : ''}`} />
                   {isPlayingDemo ? 'Воспроизведение...' : 'Демо произношения'}
                 </Button>
               </div>
 
-              <div className="flex items-center space-x-8 pt-4">
+              <div className="flex items-center space-x-6 text-sm text-slate-600">
                 <div className="flex items-center space-x-2">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full border-2 border-white" />
-                    ))}
-                  </div>
-                  <span className="text-sm text-slate-600 font-medium">1000+ учеников</span>
+                  <Star className="w-4 h-4 text-yellow-500" />
+                  <span>Бесплатно</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star key={i} className="w-4 h-4 text-amber-400 fill-current" />
-                    ))}
-                  </div>
-                  <span className="text-sm text-slate-600 font-medium">4.9/5</span>
+                  <Brain className="w-4 h-4 text-purple-500" />
+                  <span>Научный подход</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Target className="w-4 h-4 text-blue-500" />
+                  <span>Эффективно</span>
                 </div>
               </div>
             </div>
 
-            <div className="relative">
-              <div className="relative z-10 bg-white rounded-2xl shadow-strong p-8 border border-slate-200">
+            {/* Demo Card */}
+            <div className="lg:pl-8">
+              <Card className="p-8 shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-white to-blue-50">
                 <div className="text-center space-y-6">
-                  <div className="chinese-text text-6xl font-bold text-slate-900">
-                    你好
+                  <div className="space-y-4">
+                    <div className="text-6xl font-bold text-slate-900">你好</div>
+                    <div className="text-xl text-slate-600">nǐ hǎo</div>
+                    <div className="text-lg text-blue-600 font-semibold">Привет</div>
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-xl font-semibold text-slate-900">Nǐ hǎo</p>
-                    <p className="text-lg text-slate-600">Привет / Здравствуй</p>
+                  <div className="flex justify-center space-x-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleDemoAudio}
+                      disabled={isPlayingDemo}
+                    >
+                      <Volume2 className={`w-4 h-4 mr-2 ${isPlayingDemo ? 'animate-pulse' : ''}`} />
+                      Слушать
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                    >
+                      <Brain className="w-4 h-4 mr-2" />
+                      Запомнил
+                    </Button>
                   </div>
-                  <Button variant="outline" className="w-full">
-                    <Volume2 className="w-4 h-4 mr-2" />
-                    Прослушать
-                  </Button>
                 </div>
-              </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute -top-6 -right-6 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Brain className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="absolute -bottom-6 -left-6 w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-emerald-600" />
-              </div>
+              </Card>
             </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="py-16">
+        <section className="py-16 lg:py-24">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
-              Почему выбирают нас?
+              Почему выбирают нашу платформу?
             </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Наша платформа использует современные методы обучения для максимальной эффективности
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+              Мы используем современные технологии и научные методы для максимально эффективного изучения китайского языка
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Brain,
-                title: 'Научный подход',
-                description: 'Используем алгоритм интервального повторения для оптимального запоминания',
-                gradient: 'from-purple-500 to-indigo-500',
-                bgColor: 'bg-purple-50',
-                iconColor: 'text-purple-600'
-              },
-              {
-                icon: Target,
-                title: 'Персонализация',
-                description: 'Адаптируем сложность под ваш уровень и скорость обучения',
-                gradient: 'from-emerald-500 to-teal-500',
-                bgColor: 'bg-emerald-50',
-                iconColor: 'text-emerald-600'
-              },
-              {
-                icon: Zap,
-                title: 'Быстрые результаты',
-                description: 'Заметные улучшения уже через несколько недель занятий',
-                gradient: 'from-amber-500 to-orange-500',
-                bgColor: 'bg-amber-50',
-                iconColor: 'text-amber-600'
-              },
-              {
-                icon: Volume2,
-                title: 'Произношение',
-                description: 'Изучайте правильное произношение с аудио от носителей языка',
-                gradient: 'from-blue-500 to-cyan-500',
-                bgColor: 'bg-blue-50',
-                iconColor: 'text-blue-600'
-              },
-              {
-                icon: Trophy,
-                title: 'Мотивация',
-                description: 'Система достижений и прогресса поддерживает интерес к учебе',
-                gradient: 'from-pink-500 to-rose-500',
-                bgColor: 'bg-pink-50',
-                iconColor: 'text-pink-600'
-              },
-              {
-                icon: Users,
-                title: 'Сообщество',
-                description: 'Присоединяйтесь к сообществу изучающих китайский язык',
-                gradient: 'from-indigo-500 to-purple-500',
-                bgColor: 'bg-indigo-50',
-                iconColor: 'text-indigo-600'
-              }
-            ].map((feature, index) => (
-              <Card key={index} className="group hover:scale-105 transition-all duration-200 cursor-pointer">
-                <CardHeader className="text-center">
-                  <div className={`w-16 h-16 mx-auto mb-4 ${feature.bgColor} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <feature.icon className={`w-8 h-8 ${feature.iconColor}`} />
-                  </div>
-                  <CardTitle className="mb-2">{feature.title}</CardTitle>
-                  <CardDescription className="text-base">
-                    {feature.description}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
+            <Card className="p-6 hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <Brain className="w-6 h-6 text-blue-600" />
+                </div>
+                <CardTitle className="text-xl">Интервальное повторение</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600">
+                  Алгоритм SuperMemo 2 оптимизирует время повторения для максимального запоминания
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                  <Volume2 className="w-6 h-6 text-purple-600" />
+                </div>
+                <CardTitle className="text-xl">Произношение</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600">
+                  Изучайте правильное произношение с аудио поддержкой для каждого слова
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-4">
+                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4">
+                  <Trophy className="w-6 h-6 text-emerald-600" />
+                </div>
+                <CardTitle className="text-xl">Отслеживание прогресса</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600">
+                  Детальная статистика и анализ вашего прогресса в изучении языка
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-4">
+                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
+                  <Zap className="w-6 h-6 text-amber-600" />
+                </div>
+                <CardTitle className="text-xl">Быстрое обучение</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600">
+                  Эффективные методы изучения помогают быстрее достигать результатов
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-4">
+                <div className="w-12 h-12 bg-rose-100 rounded-lg flex items-center justify-center mb-4">
+                  <Target className="w-6 h-6 text-rose-600" />
+                </div>
+                <CardTitle className="text-xl">Персонализация</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600">
+                  Адаптивная система подстраивается под ваш темп и стиль обучения
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-4">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                  <Users className="w-6 h-6 text-indigo-600" />
+                </div>
+                <CardTitle className="text-xl">Поддержка сообщества</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600">
+                  Учитесь вместе с другими студентами и получайте поддержку преподавателей
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="py-16">
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-            <CardContent className="p-12 text-center">
-              <div className="max-w-2xl mx-auto space-y-6">
-                <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
-                  Готовы начать изучение?
-                </h2>
-                <p className="text-xl text-slate-600">
-                  Присоединяйтесь к тысячам студентов, которые уже изучают китайский язык с нами
-                </p>
-                <div className="pt-4">
-                  <Button 
-                    size="xl" 
-                    onClick={handleStartLearning}
-                    className="shadow-lg hover:shadow-xl group"
-                  >
-                    <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                    Начать бесплатно
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
+        <section className="py-16 lg:py-24">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 lg:p-16 text-center text-white">
+            <div className="max-w-3xl mx-auto space-y-6">
+              <h2 className="text-3xl lg:text-4xl font-bold">
+                Готовы начать изучение китайского языка?
+              </h2>
+              <p className="text-xl text-blue-100">
+                Присоединяйтесь к тысячам студентов, которые уже изучают китайский язык с нашей платформой
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg" 
+                  variant="secondary"
+                  onClick={handleStartLearning}
+                  className="shadow-lg hover:shadow-xl"
+                >
+                  <ArrowRight className="w-5 h-5 mr-2" />
+                  Начать бесплатно
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  onClick={handleLoginClick}
+                  className="border-white text-white hover:bg-white hover:text-blue-600 shadow-lg hover:shadow-xl"
+                >
+                  Уже есть аккаунт
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </section>
 
         {/* Contact Section */}
-        <section className="py-16">
+        <section className="py-16 lg:py-24">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
               Остались вопросы?
             </h2>
             <p className="text-xl text-slate-600">
               Мы всегда готовы помочь вам в изучении китайского языка
             </p>
           </div>
+          
           <FeedbackForm />
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-white">
-        <div className="content-container py-12">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center space-x-3 mb-6">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <BookOpen className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold">中文学习</span>
-            </div>
-            <p className="text-slate-400 text-lg">
-              Изучайте китайский язык эффективно и с удовольствием
-            </p>
-            <div className="pt-6 text-slate-500 text-sm">
-              © 2024 中文学习. Все права защищены.
-            </div>
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={handleCloseAuthModal}
+      />
+    </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="page-container flex items-center justify-center">
+        <div className="text-center space-y-8 px-6">
+          <div className="w-20 h-20 mx-auto">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-slate-200 border-t-blue-600"></div>
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-3xl font-bold text-slate-900">Загрузка</h2>
+            <p className="text-lg text-slate-600 font-medium">Подготовка вашего опыта обучения</p>
           </div>
         </div>
-      </footer>
-
-      <AuthModal isOpen={isAuthModalOpen} onClose={handleCloseAuthModal} />
-    </div>
+      </div>
+    }>
+      <HomePageContent />
+    </Suspense>
   )
 } 

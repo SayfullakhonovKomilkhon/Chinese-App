@@ -49,7 +49,36 @@ export async function getWordsForStudy(
 
     if (error) throw error
 
-    return data || []
+    // Transform the data to match WordWithProgress interface
+    const words: WordWithProgress[] = (data || []).map((row: any) => ({
+      id: row.word_id,
+      category_id: categoryId || 0,
+      chinese_simplified: row.chinese_simplified,
+      chinese_traditional: row.chinese_traditional,
+      pinyin: row.pinyin,
+      russian_translation: row.russian_translation,
+      english_translation: row.english_translation,
+      example_sentence_chinese: row.example_sentence_chinese,
+      example_sentence_russian: row.example_sentence_russian,
+      audio_url: row.audio_url,
+      difficulty_level: row.category_difficulty || 1,
+      frequency_rank: null,
+      is_active: true,
+      created_at: '',
+      updated_at: '',
+      // SM2 enhanced fields
+      learning_status: row.learning_status,
+      repetition_count: row.repetition_count,
+      next_review_date: row.next_review_date,
+      category_difficulty: row.category_difficulty,
+      easiness_factor: row.easiness_factor,
+      interval_days: row.interval_days,
+      // Legacy compatibility
+      is_due_for_review: true, // Already filtered by the function
+      days_until_review: 0
+    }))
+
+    return words
   } catch (error) {
     console.error('Error getting words for study:', error)
     throw error
