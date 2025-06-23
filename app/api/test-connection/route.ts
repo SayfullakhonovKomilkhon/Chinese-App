@@ -10,10 +10,11 @@ export async function GET(request: NextRequest) {
       SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ? 'SET' : 'NOT SET'
     })
 
-    // Test basic connection
+    // Test basic connection without authentication
     const { data, error } = await supabase
       .from('categories')
       .select('id, name_russian')
+      .eq('is_active', true)
       .limit(1)
 
     if (error) {
@@ -21,7 +22,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ 
         success: false, 
         error: error.message,
-        details: error 
+        details: error,
+        env: {
+          hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+          hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          hasSiteUrl: !!process.env.NEXT_PUBLIC_SITE_URL,
+          supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+          siteUrl: process.env.NEXT_PUBLIC_SITE_URL
+        }
       }, { status: 500 })
     }
 
@@ -29,11 +37,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       message: 'Supabase connection working',
-      data: data,
+      categoriesFound: data?.length || 0,
+      sampleCategory: data?.[0] || null,
       env: {
         hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
         hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        hasSiteUrl: !!process.env.NEXT_PUBLIC_SITE_URL
+        hasSiteUrl: !!process.env.NEXT_PUBLIC_SITE_URL,
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL
       }
     })
 
@@ -41,7 +52,12 @@ export async function GET(request: NextRequest) {
     console.error('❌ Test connection error:', error)
     return NextResponse.json({ 
       success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      env: {
+        hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        hasSiteUrl: !!process.env.NEXT_PUBLIC_SITE_URL
+      }
     }, { status: 500 })
   }
 } 
