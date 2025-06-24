@@ -87,79 +87,192 @@ export async function getWordsForStudy(
 
 /**
  * Submit word response with difficulty rating
- * Calls the database function submit_word_response()
+ * Uses direct database operations with SuperMemo 2 algorithm
  */
 export async function submitWordResponse(
   input: ProgressUpdateInput
 ): Promise<UserWordProgress> {
   try {
-    console.log('🔍 submitWordResponse API called:', {
-      input,
-      timestamp: new Date().toISOString()
-    })
+    console.log('🔍 submitWordResponse called with:', input)
     
+    // Step 1: Check user authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    console.log('👤 Auth check result:', {
-      hasUser: !!user,
-      userId: user?.id,
-      userEmail: user?.email,
-      authError: authError?.message
-    })
+    if (authError) {
+      console.error('❌ Auth error:', authError)
+      throw new Error(`Authentication error: ${authError.message}`)
+    }
     
     if (!user) {
       console.error('❌ User not authenticated')
       throw new Error('User not authenticated')
     }
 
-    console.log('📡 Calling Supabase RPC with params:', {
-      function_name: 'submit_word_response',
-      p_user_uuid: user.id,
-      p_word_id: input.word_id,
-      p_difficulty: input.difficulty_rating,
-      p_was_correct: true,
-      p_response_time_ms: input.response_time_ms || null,
-      p_session_id: input.session_id || null
-    })
+    console.log('👤 User authenticated:', { userId: user.id, email: user.email })
 
-    const { data, error } = await supabase.rpc('submit_word_response', {
-      p_user_uuid: user.id,
-      p_word_id: input.word_id,
-      p_difficulty: input.difficulty_rating,
-      p_was_correct: true,
-      p_response_time_ms: input.response_time_ms || null,
-      p_session_id: input.session_id || null
-    })
+    // Step 2: Get current word progress or create default values
+    let currentProgress: UserWordProgress | null = null
+    
+    try {
+      const { data: existingProgress, error: progressError } = await supabase
+        .from('user_word_progress')
+        .select('*')
+        .eq('user_uuid', user.id)
+        .eq('word_id', input.word_id)
+        .maybeSingle()
 
-    console.log('📊 Supabase RPC response:', {
-      data,
-      error: error?.message,
-      errorDetails: error,
-      hasData: !!data,
-      timestamp: new Date().toISOString()
-    })
-
-    if (error) {
-      console.error('❌ Supabase RPC error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      })
-      throw error
+      if (progressError) {
+        console.error('❌ Error fetching existing progress:', progressError)
+        // Continue with default values if select fails
+      } else {
+        currentProgress = existingProgress
+      }
+    } catch (error) {
+      console.error('❌ Error in progress lookup:', error)
+      // Continue with default values
     }
 
-    console.log('✅ submitWordResponse completed successfully:', data)
-    return data
+    console.log('📊 Current progress:', currentProgress)
+
+    // Step 3: Calculate SuperMemo 2 values
+    const quality = input.difficulty_rating === 'easy' ? 5 : 
+                   input.difficulty_rating === 'hard' ? 3 : 0
+
+    // Default values for new words
+    const defaultEasiness = 2.5
+    const defaultRepetition = 0
+    const defaultInterval = 1
+
+    // Current values (from existing progress or defaults)
+    const currentEasiness = currentProgress?.easiness_factor || defaultEasiness
+    const currentRepetition = currentProgress?.repetition_count || defaultRepetition
+    const currentInterval = currentProgress?.interval_days || defaultInterval
+
+    // SuperMemo 2 algorithm calculations
+    let newEasiness = currentEasiness - 0.8 + 0.28 * quality - 0.02 * (quality * quality)
+    newEasiness = Math.max(newEasiness, 1.3) // Minimum easiness factor
+
+    let newRepetition: number
+    let newInterval: number
+    let newStatus: 'new' | 'learning' | 'learned' | 'mastered'
+
+    if (quality < 3) {
+      // Failed response - reset
+      newRepetition = 0
+      newInterval = 1
+      newStatus = currentProgress?.learning_status === 'new' ? 'learning' : (currentProgress?.learning_status || 'learning')
+    } else {
+      // Successful response
+      newRepetition = currentRepetition + 1
+      
+      if (newRepetition === 1) {
+        newInterval = 1
+      } else if (newRepetition === 2) {
+        newInterval = 6
+      } else {
+        newInterval = Math.round(currentInterval * newEasiness)
+      }
+
+      // Update status based on performance
+      if (newRepetition >= 3 && quality >= 4) {
+        newStatus = 'learned'
+      } else if (newRepetition >= 6 && quality === 5) {
+        newStatus = 'mastered'
+      } else {
+        newStatus = currentProgress?.learning_status === 'new' ? 'learning' : (currentProgress?.learning_status || 'learning')
+      }
+    }
+
+    // Calculate next review date
+    const nextReviewDate = new Date()
+    nextReviewDate.setDate(nextReviewDate.getDate() + newInterval)
+
+    // Step 4: Prepare the upsert data with all required fields
+    const now = new Date().toISOString()
+    const progressData = {
+      user_uuid: user.id,
+      word_id: input.word_id,
+      learning_status: newStatus,
+      last_difficulty: input.difficulty_rating,
+      repetition_count: newRepetition,
+      easiness_factor: newEasiness,
+      interval_days: newInterval,
+      next_review_date: nextReviewDate.toISOString(),
+      correct_answers: (currentProgress?.correct_answers || 0) + (quality >= 3 ? 1 : 0),
+      total_attempts: (currentProgress?.total_attempts || 0) + 1,
+      accuracy_percentage: Math.round(
+        (((currentProgress?.correct_answers || 0) + (quality >= 3 ? 1 : 0)) / 
+         ((currentProgress?.total_attempts || 0) + 1)) * 100
+      ),
+      first_seen_at: currentProgress?.first_seen_at || now,
+      last_seen_at: now,
+      learned_at: newStatus === 'learned' && !currentProgress?.learned_at ? now : currentProgress?.learned_at,
+      mastered_at: newStatus === 'mastered' && !currentProgress?.mastered_at ? now : currentProgress?.mastered_at,
+      updated_at: now
+    }
+
+    console.log('📝 Upserting progress data:', progressData)
+
+    // Step 5: Upsert to user_word_progress table
+    const { data: upsertedData, error: upsertError } = await supabase
+      .from('user_word_progress')
+      .upsert(progressData, {
+        onConflict: 'user_uuid,word_id'
+      })
+      .select()
+      .single()
+
+    if (upsertError) {
+      console.error('❌ Supabase upsert error:', {
+        message: upsertError.message,
+        details: upsertError.details,
+        hint: upsertError.hint,
+        code: upsertError.code
+      })
+      throw new Error(`Failed to save progress: ${upsertError.message}`)
+    }
+
+    console.log('✅ Progress saved successfully:', upsertedData)
+
+    // Step 6: Log activity (optional, continue if this fails)
+    try {
+      const { error: activityError } = await supabase
+        .from('user_activity')
+        .insert({
+          user_uuid: user.id,
+          word_id: input.word_id,
+          session_id: input.session_id,
+          activity_type: 'word_response',
+          difficulty_rating: input.difficulty_rating,
+          was_correct: quality >= 3,
+          response_time_ms: input.response_time_ms,
+          study_mode: 'flashcard',
+          created_at: now
+        })
+
+      if (activityError) {
+        console.warn('⚠️ Activity logging failed (non-critical):', activityError)
+        // Don't throw - this is non-critical
+      }
+    } catch (activityError) {
+      console.warn('⚠️ Activity logging failed (non-critical):', activityError)
+      // Don't throw - this is non-critical
+    }
+
+    return upsertedData
+
   } catch (error) {
-    console.error('❌ ERROR in submitWordResponse:', {
+    console.error('❌ CRITICAL ERROR in submitWordResponse:', {
       error,
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
       errorStack: error instanceof Error ? error.stack : undefined,
       input,
       timestamp: new Date().toISOString()
     })
-    throw error
+    
+    // Re-throw with a user-friendly message
+    const userMessage = error instanceof Error ? error.message : 'Failed to send response'
+    throw new Error(userMessage)
   }
 }
 
