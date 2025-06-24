@@ -14,6 +14,7 @@ import {
   markWordAsLearned,
   isWordLearned
 } from '@/lib/api/advancedLearning'
+import { supabase } from '@/lib/supabaseClient'
 
 interface FlashcardStudyAdvancedProps {
   categoryId?: number
@@ -90,17 +91,42 @@ export default function FlashcardStudyAdvanced({
   }
 
   const handleDifficultyRating = async (difficulty: 'easy' | 'hard' | 'forgot') => {
-    if (!currentWord || !sessionId || isAnimating) return
+    console.log('🔥 BUTTON CLICKED:', {
+      difficulty,
+      currentWord: currentWord?.id,
+      sessionId,
+      isAnimating,
+      timestamp: new Date().toISOString()
+    })
+    
+    if (!currentWord || !sessionId || isAnimating) {
+      console.warn('⚠️ Submission blocked:', {
+        hasCurrentWord: !!currentWord,
+        hasSessionId: !!sessionId,
+        isAnimating
+      })
+      return
+    }
     
     setIsAnimating(true)
     
     try {
+      console.log('📤 Submitting word response...', {
+        word_id: currentWord.id,
+        difficulty_rating: difficulty,
+        session_id: sessionId,
+        chinese_text: currentWord.chinese_simplified,
+        user_authenticated: !!await supabase.auth.getUser()
+      })
+      
       // Submit response to backend
       const response = await submitWordResponse({
         word_id: currentWord.id,
         difficulty_rating: difficulty,
         session_id: sessionId
       })
+      
+      console.log('✅ Response submitted successfully:', response)
       
       // If user finds it easy, mark as learned immediately for better UX
       if (difficulty === 'easy') {
@@ -126,6 +152,8 @@ export default function FlashcardStudyAdvanced({
         accuracy: sessionStats.totalAnswers >= 0 ? 
           ((wasCorrect ? sessionStats.correctAnswers + 1 : sessionStats.correctAnswers) / (sessionStats.totalAnswers + 1)) * 100 : 0
       }
+      
+      console.log('📊 Updated session stats:', updatedStats)
       
       // Update session statistics state
       setSessionStats(updatedStats)
@@ -157,9 +185,18 @@ export default function FlashcardStudyAdvanced({
       }
       
     } catch (error) {
-      console.error('❌ Error submitting word response:', error)
+      console.error('❌ DETAILED ERROR in handleDifficultyRating:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        currentWord: currentWord?.id,
+        sessionId,
+        difficulty,
+        timestamp: new Date().toISOString()
+      })
+      
       const errorMessage = error instanceof Error ? error.message : 'Не удалось отправить ответ'
-      alert(`Ошибка: ${errorMessage}`)
+      alert(`Ошибка отправки: ${errorMessage}`)
       setIsAnimating(false)
     }
   }

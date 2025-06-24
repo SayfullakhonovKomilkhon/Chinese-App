@@ -93,8 +93,34 @@ export async function submitWordResponse(
   input: ProgressUpdateInput
 ): Promise<UserWordProgress> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
+    console.log('🔍 submitWordResponse API called:', {
+      input,
+      timestamp: new Date().toISOString()
+    })
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    console.log('👤 Auth check result:', {
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      authError: authError?.message
+    })
+    
+    if (!user) {
+      console.error('❌ User not authenticated')
+      throw new Error('User not authenticated')
+    }
+
+    console.log('📡 Calling Supabase RPC with params:', {
+      function_name: 'submit_word_response',
+      p_user_uuid: user.id,
+      p_word_id: input.word_id,
+      p_difficulty: input.difficulty_rating,
+      p_was_correct: true,
+      p_response_time_ms: input.response_time_ms || null,
+      p_session_id: input.session_id || null
+    })
 
     const { data, error } = await supabase.rpc('submit_word_response', {
       p_user_uuid: user.id,
@@ -105,11 +131,34 @@ export async function submitWordResponse(
       p_session_id: input.session_id || null
     })
 
-    if (error) throw error
+    console.log('📊 Supabase RPC response:', {
+      data,
+      error: error?.message,
+      errorDetails: error,
+      hasData: !!data,
+      timestamp: new Date().toISOString()
+    })
 
+    if (error) {
+      console.error('❌ Supabase RPC error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
+      throw error
+    }
+
+    console.log('✅ submitWordResponse completed successfully:', data)
     return data
   } catch (error) {
-    console.error('Error submitting word response:', error)
+    console.error('❌ ERROR in submitWordResponse:', {
+      error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined,
+      input,
+      timestamp: new Date().toISOString()
+    })
     throw error
   }
 }
