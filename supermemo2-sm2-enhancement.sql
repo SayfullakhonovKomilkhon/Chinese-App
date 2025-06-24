@@ -75,7 +75,7 @@ BEGIN
         LIMIT p_limit
     )
     SELECT 
-        wp.id::INTEGER,
+        wp.id::INTEGER as word_id,
         wp.chinese_simplified,
         wp.chinese_traditional,
         wp.pinyin,

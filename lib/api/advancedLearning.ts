@@ -47,11 +47,14 @@ export async function getWordsForStudy(
       p_limit: options.max_words || 20
     })
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ RPC error in getWordsForStudy:', error)
+      throw error
+    }
 
     // Transform the data to match WordWithProgress interface
     const words: WordWithProgress[] = (data || []).map((row: any) => ({
-      id: row.word_id,
+      id: row.id || row.word_id, // Use 'id' as primary, 'word_id' as fallback
       category_id: categoryId || 0,
       chinese_simplified: row.chinese_simplified,
       chinese_traditional: row.chinese_traditional,
@@ -109,6 +112,12 @@ export async function submitWordResponse(
     }
 
     console.log('👤 User authenticated:', { userId: user.id, email: user.email })
+
+    // Validate word_id before proceeding
+    if (!input.word_id || input.word_id === null || input.word_id === undefined || input.word_id === 0) {
+      console.error('❌ CRITICAL: word_id is missing or invalid:', input.word_id)
+      throw new Error('word_id is required and cannot be null')
+    }
 
     // Step 2: Get current word progress or create default values
     let currentProgress: UserWordProgress | null = null
@@ -191,7 +200,7 @@ export async function submitWordResponse(
     const now = new Date().toISOString()
     const progressData = {
       user_uuid: user.id,
-      word_id: input.word_id,
+      word_id: input.word_id, // This should not be null at this point
       learning_status: newStatus,
       last_difficulty: input.difficulty_rating,
       repetition_count: newRepetition,
@@ -211,7 +220,7 @@ export async function submitWordResponse(
       updated_at: now
     }
 
-    console.log('📝 Upserting progress data:', progressData)
+    console.log('📝 Upserting progress data for word_id:', progressData.word_id)
 
     // Step 5: Upsert to user_word_progress table
     const { data: upsertedData, error: upsertError } = await supabase
