@@ -1,10 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronRight, RotateCcw, Eye, EyeOff, CheckCircle, Volume2, Star, Zap, X, Trophy, ArrowLeft } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  ChevronRight, 
+  RotateCcw, 
+  Eye, 
+  EyeOff, 
+  CheckCircle, 
+  Volume2, 
+  Zap, 
+  Trophy, 
+  Star,
+  X
+} from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { WordWithProgress, UserSession } from '@/lib/types/learning'
 import { 
   getWordsForStudy, 
   submitWordResponse, 
@@ -14,6 +25,7 @@ import {
   markWordAsLearned,
   isWordLearned
 } from '@/lib/api/advancedLearning'
+import { WordWithProgress } from '@/lib/types/learning'
 import { supabase } from '@/lib/supabaseClient'
 
 interface FlashcardStudyAdvancedProps {
@@ -52,34 +64,102 @@ export default function FlashcardStudyAdvanced({
 
   // Initialize study session
   useEffect(() => {
-    initializeSession()
-  }, [categoryId])
+    if (categoryId !== undefined && categoryId !== null) {
+      initializeSession()
+    } else if (categoryName) {
+      // Try with just category name
+      initializeSession()
+    } else {
+      console.error('❌ FlashcardStudyAdvanced: Invalid categoryId and no categoryName:', { categoryId, categoryName })
+      onError?.('Неверный идентификатор категории')
+    }
+  }, [categoryId, categoryName])
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('🔄 FlashcardStudyAdvanced state update:', {
+      loading,
+      wordsCount: words.length,
+      currentIndex,
+      hasCurrentWord: !!currentWord,
+      currentWordId: currentWord?.id,
+      categoryId,
+      categoryName
+    })
+  }, [loading, words.length, currentIndex, currentWord, categoryId])
 
   const initializeSession = async () => {
     try {
+      console.log('🚀 FlashcardStudyAdvanced: Initializing session for category:', categoryId, categoryName)
       setLoading(true)
       
+      // If no categoryId provided, try to look it up by name
+      let actualCategoryId = categoryId
+      if (!actualCategoryId && categoryName) {
+        console.log('📝 No categoryId provided, looking up by name:', categoryName)
+        try {
+          const { data: categories, error: categoryError } = await supabase
+            .from('categories')
+            .select('id')
+            .eq('name_russian', categoryName)
+            .eq('is_active', true)
+            .maybeSingle()
+          
+          if (categoryError) {
+            console.error('❌ Error looking up category:', categoryError)
+          } else if (categories) {
+            actualCategoryId = categories.id
+            console.log('✅ Found category ID:', actualCategoryId)
+          } else {
+            console.warn('⚠️ Category not found by name:', categoryName)
+          }
+        } catch (error) {
+          console.error('❌ Error in category lookup:', error)
+        }
+      }
+      
+      if (!actualCategoryId) {
+        console.error('❌ No valid category ID found')
+        onError?.('Не удалось найти категорию')
+        return
+      }
+      
       // Start session
-      const newSessionId = await startStudySession(categoryId, 'study')
+      console.log('📝 Starting study session...')
+      const newSessionId = await startStudySession(actualCategoryId, 'study')
+      console.log('✅ Session started with ID:', newSessionId)
       setSessionId(newSessionId)
       
       // Get words for study
-      const studyWords = await getWordsForStudy(categoryId, {
+      console.log('📚 Fetching words for study...')
+      const studyWords = await getWordsForStudy(actualCategoryId, {
         max_words: 20,
         include_review: true,
         include_new: true
       })
       
+      console.log('📊 Words fetched:', {
+        count: studyWords.length,
+        categoryId: actualCategoryId,
+        words: studyWords.map(w => ({ id: w.id, chinese: w.chinese_simplified, status: w.learning_status }))
+      })
+      
       if (studyWords.length === 0) {
-        onError?.('Нет слов для изучения в данной категории')
+        console.warn('⚠️ No words found for category:', actualCategoryId)
+        // Don't call onError - let the component render the "no words" state
+        setWords([])
+        setLoading(false)
         return
       }
       
+      console.log('🎯 Setting words and initializing state...')
       setWords(studyWords)
       setCurrentIndex(0)
       setShowTranslation(false)
+      
+      console.log('✅ Session initialization complete!')
     } catch (error) {
-      console.error('Error initializing session:', error)
+      console.error('❌ Error initializing session:', error)
       onError?.('Ошибка инициализации сессии изучения')
     } finally {
       setLoading(false)
@@ -297,18 +377,52 @@ export default function FlashcardStudyAdvanced({
     )
   }
 
-  if (!currentWord) {
+  // Show "no words" only if loading is complete AND we have no words
+  if (!loading && words.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-6 bg-slate-100 rounded-full flex items-center justify-center">
-              <Trophy className="w-8 h-8 text-slate-500" />
+        <div className="text-center space-y-6 max-w-md mx-auto px-4">
+          <div className="w-16 h-16 mx-auto">
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
+              <Zap className="w-8 h-8 text-amber-600" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-3">Нет слов для изучения</h2>
-            <p className="text-slate-600">Все слова в этой категории изучены!</p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-slate-900">Категория пуста</h2>
+            <p className="text-slate-600">
+              В категории &quot;{categoryName}&quot; пока нет слов для изучения.
+            </p>
+            <p className="text-sm text-slate-500">
+              Попробуйте выбрать другую категорию или обратитесь к преподавателю для добавления контента.
+            </p>
+            <div className="pt-4">
+              <button
+                onClick={() => window.history.back()}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4 mr-2 rotate-180" />
+                Вернуться к категориям
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading if we don't have a current word yet (but have words array)
+  if (!currentWord && words.length > 0) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 mx-auto">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-blue-600"></div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-slate-900">Подготовка карточки</h2>
+            <p className="text-slate-600">Загрузка следующего слова...</p>
+          </div>
+        </div>
       </div>
     )
   }
@@ -373,27 +487,66 @@ export default function FlashcardStudyAdvanced({
 
                 {/* Chinese Characters */}
                 <div className="mb-8">
-                  <h2 className="text-6xl md:text-8xl font-bold text-slate-900 mb-4 tracking-wide">
+                  <h2 className="text-4xl text-blue-900 font-bold mb-4 tracking-wide">
                     {currentWord.chinese_simplified}
                   </h2>
-                  {/* Pinyin shown only after translation is revealed */}
-                  {showTranslation && (
-                    <p className="text-2xl md:text-3xl text-slate-600 font-medium">
-                      {currentWord.pinyin}
-                    </p>
-                  )}
+                  {/* Pinyin in brown */}
+                  <p className="text-xl text-amber-800 font-medium mb-4">
+                    {currentWord.pinyin}
+                  </p>
                 </div>
 
-                {/* Translation (when revealed) */}
-                {showTranslation && (
-                  <Card className="mb-8 border-emerald-200 bg-emerald-50">
-                    <CardContent className="p-6">
-                      <p className="text-2xl md:text-3xl font-semibold text-emerald-800">
-                        {currentWord.russian_translation}
-                      </p>
-                    </CardContent>
-                  </Card>
+                {/* Example Sentences (always shown) */}
+                {(currentWord.example_sentence_chinese || currentWord.example_sentence_russian) && (
+                  <div className="mb-8 space-y-4">
+                    {currentWord.example_sentence_chinese && (
+                      <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                        <p className="text-lg text-amber-800" dangerouslySetInnerHTML={{
+                          __html: currentWord.example_sentence_chinese.replace(
+                            currentWord.chinese_simplified,
+                            `<span class="text-orange-600 font-semibold">${currentWord.chinese_simplified}</span>`
+                          )
+                        }} />
+                      </div>
+                    )}
+                    {currentWord.example_sentence_russian && (
+                      <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                        <p className="text-lg text-amber-800" dangerouslySetInnerHTML={{
+                          __html: currentWord.example_sentence_russian.replace(
+                            currentWord.russian_translation,
+                            `<span class="text-orange-600 font-semibold">${currentWord.russian_translation}</span>`
+                          )
+                        }} />
+                      </div>
+                    )}
+                  </div>
                 )}
+
+                {/* Character Breakdown (shown when translation button is clicked) */}
+                <AnimatePresence>
+                  {showTranslation && (
+                    <motion.div 
+                      className="mb-8"
+                      initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                      transition={{ 
+                        duration: 0.4, 
+                        ease: "easeOut",
+                        type: "spring",
+                        stiffness: 100,
+                        damping: 15
+                      }}
+                    >
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
+                        <p className="text-sm text-gray-500 mb-2">Разбор иероглифа:</p>
+                        <p className="text-base text-gray-600">
+                          {currentWord.chinese_simplified} [{currentWord.pinyin}] - {currentWord.russian_translation}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-4 justify-center mb-8">
@@ -412,7 +565,7 @@ export default function FlashcardStudyAdvanced({
                     className="flex items-center space-x-2"
                   >
                     {showTranslation ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    <span>{showTranslation ? 'Скрыть' : 'Перевод'}</span>
+                    <span>{showTranslation ? 'Скрыть разбор' : 'Показать перевод'}</span>
                   </Button>
                 </div>
 
@@ -420,13 +573,13 @@ export default function FlashcardStudyAdvanced({
                 {showTranslation && (
                   <div className="flex flex-wrap gap-3 justify-center">
                     <Button
-                      onClick={() => handleDifficultyRating('easy')}
+                      onClick={() => handleDifficultyRating('forgot')}
                       disabled={isAnimating}
-                      variant="success"
+                      variant="destructive"
                       className="flex items-center space-x-2"
                     >
-                      <CheckCircle className="w-5 h-5" />
-                      <span>Легко</span>
+                      <X className="w-5 h-5" />
+                      <span>Забыл</span>
                     </Button>
 
                     <Button
@@ -440,13 +593,13 @@ export default function FlashcardStudyAdvanced({
                     </Button>
 
                     <Button
-                      onClick={() => handleDifficultyRating('forgot')}
+                      onClick={() => handleDifficultyRating('easy')}
                       disabled={isAnimating}
-                      variant="destructive"
+                      variant="success"
                       className="flex items-center space-x-2"
                     >
-                      <X className="w-5 h-5" />
-                      <span>Забыл</span>
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Легко</span>
                     </Button>
                   </div>
                 )}
