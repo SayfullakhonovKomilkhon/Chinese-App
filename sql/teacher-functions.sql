@@ -473,7 +473,7 @@ BEGIN
   WHERE c.is_active = true
   ORDER BY c.display_order ASC, c.created_at ASC;
 END;
-$$;
+$$; 
 
 -- =====================================================
 -- TEACHER PANEL SQL FUNCTIONS

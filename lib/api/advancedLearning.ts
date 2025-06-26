@@ -570,7 +570,7 @@ export async function getCategoriesWithProgress(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
-    // First, update all category progress using practice-based calculation
+    // First, update all category progress using dynamic SuperMemo 2 review scheduling
     try {
       // Get all categories with words that the user has practiced
       const { data: categoriesWithWords, error: categoriesError } = await supabase
@@ -585,14 +585,14 @@ export async function getCategoriesWithProgress(
         .gt('words.user_word_progress.total_attempts', 0)
 
       if (!categoriesError && categoriesWithWords) {
-        // Update progress for each category where user has practiced words
+        // Update progress for each category using dynamic review scheduling
         for (const category of categoriesWithWords) {
-          await supabase.rpc('update_category_progress_for_user', {
+          await supabase.rpc('update_category_progress_with_review_schedule', {
             p_user_uuid: user.id,
             p_category_id: category.id
           })
         }
-        console.log('📊 Updated category progress for', categoriesWithWords.length, 'categories')
+        console.log('🔄 Updated dynamic category progress for', categoriesWithWords.length, 'categories')
       }
     } catch (updateError) {
       console.warn('⚠️ Failed to update category progress (non-critical):', updateError)
@@ -623,19 +623,39 @@ export async function getCategoriesWithProgress(
 
     if (progressError) throw progressError
 
-    // Combine categories with progress
-    const categoriesWithProgress: CategorySummary[] = categories.map(category => {
-      const categoryProgress = progress.find(p => p.category_id === category.id)
-      
-      return {
-        ...category,
-        progress: categoryProgress,
-        last_studied: categoryProgress?.last_studied_at,
-        // TODO: Calculate words_due_for_review and next_review_date
-        words_due_for_review: 0,
-        next_review_date: undefined
-      }
-    })
+    // Get detailed review information for each category
+    const categoriesWithProgress: CategorySummary[] = await Promise.all(
+      categories.map(async category => {
+        const categoryProgress = progress.find(p => p.category_id === category.id)
+        
+        // Get review summary for this category
+        let words_due_for_review = 0
+        let next_review_date = undefined
+        
+        try {
+          const { data: reviewSummary } = await supabase
+            .rpc('get_category_review_summary', {
+              p_user_uuid: user.id,
+              p_category_id: category.id
+            })
+          
+          if (reviewSummary) {
+            words_due_for_review = reviewSummary.words_due_today || 0
+            next_review_date = reviewSummary.next_review_date
+          }
+        } catch (reviewError) {
+          console.warn('⚠️ Failed to get review summary for category:', category.id, reviewError)
+        }
+        
+        return {
+          ...category,
+          progress: categoryProgress,
+          last_studied: categoryProgress?.last_studied_at,
+          words_due_for_review,
+          next_review_date
+        }
+      })
+    )
 
     // Apply status filter if specified
     if (filters.status) {
@@ -724,6 +744,28 @@ export async function getWordsDueToday(): Promise<number> {
   } catch (error) {
     console.error('Error getting words due today:', error)
     return 0
+  }
+}
+
+/**
+ * Apply dynamic category completion to all user's categories
+ */
+export async function applyDynamicCategoryCompletion(): Promise<string> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('User not authenticated')
+
+    const { data, error } = await supabase.rpc('update_all_categories_with_review_schedule', {
+      p_user_uuid: user.id
+    })
+
+    if (error) throw error
+
+    console.log('✅ Applied dynamic category completion:', data)
+    return data || 'Dynamic category completion applied successfully'
+  } catch (error) {
+    console.error('Error applying dynamic category completion:', error)
+    throw error
   }
 }
 
