@@ -570,17 +570,29 @@ export async function getCategoriesWithProgress(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
-    // First, update all category progress using Easy-based calculation
+    // First, update all category progress using practice-based calculation
     try {
-      const { data: updateResult, error: updateError } = await supabase
-        .rpc('update_all_category_progress_easy_based', {
-          p_user_uuid: user.id
-        })
+      // Get all categories with words that the user has practiced
+      const { data: categoriesWithWords, error: categoriesError } = await supabase
+        .from('categories')
+        .select(`
+          id,
+          words!inner(id, user_word_progress!inner(total_attempts))
+        `)
+        .eq('is_active', true)
+        .eq('words.is_active', true)
+        .eq('words.user_word_progress.user_uuid', user.id)
+        .gt('words.user_word_progress.total_attempts', 0)
 
-      if (updateError) {
-        console.warn('⚠️ Failed to update category progress (non-critical):', updateError)
-      } else {
-        console.log('📊 Updated all category progress:', updateResult)
+      if (!categoriesError && categoriesWithWords) {
+        // Update progress for each category where user has practiced words
+        for (const category of categoriesWithWords) {
+          await supabase.rpc('update_category_progress_for_user', {
+            p_user_uuid: user.id,
+            p_category_id: category.id
+          })
+        }
+        console.log('📊 Updated category progress for', categoriesWithWords.length, 'categories')
       }
     } catch (updateError) {
       console.warn('⚠️ Failed to update category progress (non-critical):', updateError)
