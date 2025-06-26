@@ -112,7 +112,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
 
       if (profileError.code !== 'PGRST116') {
         console.error('getCurrentUser: Unhandled profile error, returning null')
-        return null
+      return null
       }
     }
 

@@ -14,6 +14,14 @@ export default function StudyPage() {
   const category = decodeURIComponent(params.category as string)
   const categoryId = searchParams.get('categoryId') ? parseInt(searchParams.get('categoryId')!) : undefined
   
+  console.log('🔍 StudyPage URL params:', {
+    rawCategory: params.category,
+    decodedCategory: category,
+    rawCategoryId: searchParams.get('categoryId'),
+    parsedCategoryId: categoryId,
+    searchParamsAll: Object.fromEntries(searchParams.entries())
+  })
+  
   const [sessionSummary, setSessionSummary] = useState<any>(null)
   const [showSummary, setShowSummary] = useState(false)
 

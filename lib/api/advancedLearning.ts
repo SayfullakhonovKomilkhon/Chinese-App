@@ -243,6 +243,36 @@ export async function submitWordResponse(
 
     console.log('✅ Progress saved successfully:', upsertedData)
 
+    // Step 5.5: Update category progress when word difficulty changes (especially for "Easy" cards)
+    if (input.difficulty_rating === 'easy' || input.difficulty_rating === 'hard' || input.difficulty_rating === 'forgot') {
+      try {
+        // Get the category ID for this word
+        const { data: wordData, error: wordError } = await supabase
+          .from('words')
+          .select('category_id')
+          .eq('id', input.word_id)
+          .single()
+
+        if (!wordError && wordData) {
+          // Update category progress using our new Easy-based calculation
+          const { data: categoryProgressResult, error: categoryProgressError } = await supabase
+            .rpc('update_category_progress_easy_based', {
+              p_user_uuid: user.id,
+              p_category_id: wordData.category_id
+            })
+
+          if (categoryProgressError) {
+            console.warn('⚠️ Category progress update failed (non-critical):', categoryProgressError)
+          } else {
+            console.log('📊 Category progress updated:', categoryProgressResult)
+          }
+        }
+      } catch (categoryError) {
+        console.warn('⚠️ Category progress update failed (non-critical):', categoryError)
+        // Don't throw - this is non-critical
+      }
+    }
+
     // Step 6: Log activity (optional, continue if this fails)
     try {
       const { error: activityError } = await supabase
@@ -540,6 +570,22 @@ export async function getCategoriesWithProgress(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
+    // First, update all category progress using Easy-based calculation
+    try {
+      const { data: updateResult, error: updateError } = await supabase
+        .rpc('update_all_category_progress_easy_based', {
+          p_user_uuid: user.id
+        })
+
+      if (updateError) {
+        console.warn('⚠️ Failed to update category progress (non-critical):', updateError)
+      } else {
+        console.log('📊 Updated all category progress:', updateResult)
+      }
+    } catch (updateError) {
+      console.warn('⚠️ Failed to update category progress (non-critical):', updateError)
+    }
+
     // Get categories
     let categoriesQuery = supabase
       .from('categories')
@@ -557,7 +603,7 @@ export async function getCategoriesWithProgress(
 
     if (categoriesError) throw categoriesError
 
-    // Get progress for each category
+    // Get progress for each category (now updated with Easy-based calculation)
     const { data: progress, error: progressError } = await supabase
       .from('user_category_progress')
       .select('*')

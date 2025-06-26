@@ -383,47 +383,54 @@ CREATE TRIGGER update_user_statistics_trigger
 CREATE OR REPLACE FUNCTION update_category_progress()
 RETURNS TRIGGER AS $$
 DECLARE
+    category_id_val INTEGER;
     category_total INTEGER;
     words_learned_count INTEGER;
     words_started_count INTEGER;
     words_mastered_count INTEGER;
+    words_practiced_count INTEGER; -- New: words that have been seen at least once
     completion_pct DECIMAL(5,2);
     new_status VARCHAR(20);
 BEGIN
     -- Get the category from the word
-    SELECT category_id INTO category_total FROM words WHERE id = NEW.word_id;
+    SELECT category_id INTO category_id_val FROM words WHERE id = NEW.word_id;
     
     -- Insert category progress record if it doesn't exist
     INSERT INTO user_category_progress (user_uuid, category_id, total_words)
-    SELECT NEW.user_uuid, category_total, c.total_words
+    SELECT NEW.user_uuid, category_id_val, c.total_words
     FROM categories c
-    WHERE c.id = category_total
+    WHERE c.id = category_id_val
     ON CONFLICT (user_uuid, category_id) DO NOTHING;
     
-    -- Count progress
+    -- Count progress - Enhanced logic for better completion tracking
     SELECT 
-        COUNT(*) FILTER (WHERE learning_status != 'new'),
-        COUNT(*) FILTER (WHERE learning_status IN ('learned', 'mastered')),
-        COUNT(*) FILTER (WHERE learning_status = 'mastered')
-    INTO words_started_count, words_learned_count, words_mastered_count
+        COUNT(*) FILTER (WHERE learning_status != 'new' AND learning_status IS NOT NULL),  -- Started (not new)
+        COUNT(*) FILTER (WHERE learning_status IN ('learned', 'mastered')),                -- Learned/Mastered
+        COUNT(*) FILTER (WHERE learning_status = 'mastered'),                              -- Mastered only
+        COUNT(*) FILTER (WHERE total_attempts > 0)                                        -- Practiced (seen at least once)
+    INTO words_started_count, words_learned_count, words_mastered_count, words_practiced_count
     FROM user_word_progress uwp
     JOIN words w ON uwp.word_id = w.id
     WHERE uwp.user_uuid = NEW.user_uuid
-    AND w.category_id = category_total;
+    AND w.category_id = category_id_val;
     
-    -- Calculate completion percentage
-    SELECT total_words INTO category_total FROM categories WHERE id = category_total;
+    -- Get total words in category
+    SELECT total_words INTO category_total FROM categories WHERE id = category_id_val;
+    
+    -- Calculate completion percentage based on words practiced (more realistic)
     completion_pct := CASE 
-        WHEN category_total > 0 THEN (words_learned_count::DECIMAL / category_total) * 100
+        WHEN category_total > 0 THEN (words_practiced_count::DECIMAL / category_total) * 100
         ELSE 0
     END;
     
-    -- Determine new status
+    -- Determine new status with improved logic
     IF words_mastered_count = category_total AND category_total > 0 THEN
         new_status := 'mastered';
-    ELSIF words_learned_count = category_total AND category_total > 0 THEN
+    ELSIF words_practiced_count = category_total AND category_total > 0 THEN
+        -- Category is completed when user has practiced all words at least once
+        -- This allows for spaced repetition while showing completion
         new_status := 'completed';
-    ELSIF words_started_count > 0 THEN
+    ELSIF words_started_count > 0 OR words_practiced_count > 0 THEN
         new_status := 'in_progress';
     ELSE
         new_status := 'not_started';
@@ -437,11 +444,12 @@ BEGIN
         words_mastered = words_mastered_count,
         completion_percentage = completion_pct,
         status = new_status,
+        started_at = CASE WHEN new_status != 'not_started' AND started_at IS NULL THEN NOW() ELSE started_at END,
         completed_at = CASE WHEN new_status = 'completed' AND completed_at IS NULL THEN NOW() ELSE completed_at END,
         mastered_at = CASE WHEN new_status = 'mastered' AND mastered_at IS NULL THEN NOW() ELSE mastered_at END,
         last_studied_at = NOW(),
         updated_at = NOW()
-    WHERE user_uuid = NEW.user_uuid AND category_id = category_total;
+    WHERE user_uuid = NEW.user_uuid AND category_id = category_id_val;
     
     RETURN NEW;
 END;

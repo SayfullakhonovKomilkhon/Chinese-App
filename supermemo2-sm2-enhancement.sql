@@ -49,29 +49,73 @@ BEGIN
             c.difficulty_level as category_difficulty,
             COALESCE(uwp.easiness_factor, 2.5) as easiness_factor,
             COALESCE(uwp.interval_days, 1) as interval_days,
-            -- Priority calculation (lower number = higher priority)
-            -- SM2 + Difficulty Level Logic: Hard categories (difficulty_level >= 3) show every day
+            -- Enhanced Priority calculation (lower number = higher priority)
+            -- Uses SuperMemo 2 values to prioritize forgotten words based on memory performance
             CASE 
+                -- Highest priority: New words that haven't been seen
                 WHEN uwp.learning_status IS NULL OR uwp.learning_status = 'new' THEN 1
-                WHEN c.difficulty_level >= 3 THEN 2  -- Hard categories: daily review regardless of interval
-                WHEN uwp.learning_status = 'learning' AND uwp.next_review_date <= NOW() THEN 3
-                WHEN uwp.learning_status = 'learning' THEN 4
-                ELSE 5
-            END as priority
+                
+                -- Second priority: Words frequently forgotten (low easiness factor + poor accuracy)
+                WHEN uwp.learning_status = 'learning' 
+                     AND uwp.easiness_factor <= 1.5 
+                     AND COALESCE(uwp.accuracy_percentage, 0) < 50 
+                     AND uwp.total_attempts >= 3 THEN 2
+                
+                -- Third priority: Words with recent failures (low easiness factor)
+                WHEN uwp.learning_status = 'learning' 
+                     AND uwp.easiness_factor <= 1.8 
+                     AND uwp.total_attempts >= 2 THEN 3
+                
+                -- Fourth priority: Words due for review with medium difficulty
+                WHEN uwp.learning_status = 'learning' 
+                     AND uwp.next_review_date <= NOW() 
+                     AND uwp.easiness_factor <= 2.2 THEN 4
+                
+                -- Fifth priority: Hard categories show daily regardless of interval
+                WHEN c.difficulty_level >= 3 THEN 5
+                
+                -- Sixth priority: Regular words due for review
+                WHEN uwp.learning_status = 'learning' 
+                     AND uwp.next_review_date <= NOW() THEN 6
+                
+                -- Seventh priority: Learning words not yet due but with low accuracy
+                WHEN uwp.learning_status = 'learning' 
+                     AND COALESCE(uwp.accuracy_percentage, 0) < 70 THEN 7
+                
+                -- Eighth priority: Learned words due for review
+                WHEN uwp.learning_status = 'learned' 
+                     AND uwp.next_review_date <= NOW() THEN 8
+                
+                -- Ninth priority: Learned words not yet due (for reinforcement)
+                WHEN uwp.learning_status = 'learned' THEN 9
+                
+                -- Lowest priority: Other words
+                ELSE 10
+            END as priority,
+            
+            -- Memory performance score for secondary sorting (lower = more forgotten)
+            CASE 
+                WHEN uwp.total_attempts = 0 THEN 0  -- New words
+                ELSE 
+                    -- Combine easiness factor and accuracy for memory performance
+                    (uwp.easiness_factor * COALESCE(uwp.accuracy_percentage, 0)) / 100
+            END as memory_performance
         FROM words w
         JOIN categories c ON w.category_id = c.id
         LEFT JOIN user_word_progress uwp ON w.id = uwp.word_id AND uwp.user_uuid = p_user_uuid
         WHERE w.category_id = p_category_id
         AND w.is_active = true
         AND c.is_active = true
+        -- FIXED: Only exclude mastered words, allow all others including learned words
         AND (uwp.learning_status IS NULL OR uwp.learning_status != 'mastered')
-        -- SM2 + Difficulty Level Filter: Show cards if due for review OR in hard category
+        -- CRITICAL FILTER: Exclude cards marked as "easy" in their last review
+        -- Only show new words OR words that were marked as "hard" or "forgot"
         AND (
-            uwp.next_review_date IS NULL 
-            OR uwp.next_review_date <= NOW()
-            OR c.difficulty_level >= 3  -- Hard categories: show every day
+            uwp.last_difficulty IS NULL  -- New words (never answered)
+            OR uwp.last_difficulty = 'hard'   -- Hard cards (need more practice)
+            OR uwp.last_difficulty = 'forgot' -- Forgot cards (need repetition)
         )
-        ORDER BY priority ASC, uwp.next_review_date ASC NULLS FIRST, RANDOM()
+        ORDER BY priority ASC, memory_performance ASC, uwp.next_review_date ASC NULLS FIRST, RANDOM()
         LIMIT p_limit
     )
     SELECT 
