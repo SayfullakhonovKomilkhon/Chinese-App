@@ -120,11 +120,11 @@ export default function StudentDashboard() {
 
   const getCategoryStatusText = (status: string) => {
     switch (status) {
-      case 'not_started': return 'Не начата'
+      case 'not_started': return 'Не выполнено'
       case 'in_progress': return 'В процессе'
       case 'completed': return 'Завершена'
       case 'mastered': return 'Освоена'
-      default: return 'Не начата'
+      default: return 'Не выполнено'
     }
   }
 
