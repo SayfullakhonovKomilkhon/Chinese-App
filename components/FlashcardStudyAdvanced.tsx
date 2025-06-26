@@ -490,10 +490,6 @@ export default function FlashcardStudyAdvanced({
                   <h2 className="text-4xl text-blue-900 font-bold mb-4 tracking-wide">
                     {currentWord.chinese_simplified}
                   </h2>
-                  {/* Pinyin in brown */}
-                  <p className="text-xl text-amber-800 font-medium mb-4">
-                    {currentWord.pinyin}
-                  </p>
                 </div>
 
                 {/* Example Sentences (always shown) */}
